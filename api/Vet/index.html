@@ -22,8 +22,8 @@ local Name = Vet.string():min(3):max(22)
 Name:parse(&quot;kyle&quot;) --&gt; &quot;kyle&quot;
 Name:parse(&quot;ky&quot;)   --&gt; errors
 ```"><link data-rh="true" rel="canonical" href="https://imkylecat.github.io/vet/api/Vet"><link data-rh="true" rel="alternate" href="https://imkylecat.github.io/vet/api/Vet" hreflang="en"><link data-rh="true" rel="alternate" href="https://imkylecat.github.io/vet/api/Vet" hreflang="x-default"><link rel="stylesheet" href="/vet/assets/css/styles.5ec48d9a.css">
-<script src="/vet/assets/js/runtime~main.79673ef8.js" defer="defer"></script>
-<script src="/vet/assets/js/main.b0681314.js" defer="defer"></script>
+<script src="/vet/assets/js/runtime~main.f49bfbf0.js" defer="defer"></script>
+<script src="/vet/assets/js/main.94bd5b3a.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -76,13 +76,59 @@ type Nickname <span class="token operator">=</span> Vet<span class="token punctu
   The property walk duplicates the one in <a href="/vet/api/Vet#infer">Vet.infer</a> because a type function
   cannot call another type function.
 </p>
-</div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="string"><code style="text-decoration:none">string</code><a href="#string" class="hash-link" aria-label="Direct link to string" title="Direct link to string" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1093"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">string</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/StringSchema">StringSchema</a></code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="UuidVersion"><code style="text-decoration:none">UuidVersion</code><a href="#UuidVersion" class="hash-link" aria-label="Direct link to UuidVersion" title="Direct link to UuidVersion" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1092"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">type</code> <code>UuidVersion<!-- --> = </code> <code class="blue_P4bS">&quot;v4&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v5&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v6&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v7&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v8&quot;</code></div><div>
+<p>
+  Versions accepted by <a href="/vet/api/Vet#uuid">Vet.uuid</a> and <a href="/vet/api/Vet#guid">Vet.guid</a>. Version 4 is random, 5 is
+  name-based, 6 is reordered time, 7 is Unix epoch time, and 8 is custom.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="UuidOptions"><code style="text-decoration:none">UuidOptions</code><a href="#UuidOptions" class="hash-link" aria-label="Direct link to UuidOptions" title="Direct link to UuidOptions" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1099"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>UuidOptions<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>version<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidVersion">UuidVersion?</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>Version the identifier must declare</p>
+</span></span></div></div><code>}</code></div><div></div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="string"><code style="text-decoration:none">string</code><a href="#string" class="hash-link" aria-label="Direct link to string" title="Direct link to string" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1192"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">string</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/StringSchema">StringSchema</a></code></div><div>
 <p>Creates a schema that accepts any string.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="number"><code style="text-decoration:none">number</code><a href="#number" class="hash-link" aria-label="Direct link to number" title="Direct link to number" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1103"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">number</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/NumberSchema">NumberSchema</a></code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="number"><code style="text-decoration:none">number</code><a href="#number" class="hash-link" aria-label="Direct link to number" title="Direct link to number" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1202"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">number</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/NumberSchema">NumberSchema</a></code></div><div>
 <p>Creates a schema that accepts any number except NaN.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="boolean"><code style="text-decoration:none">boolean</code><a href="#boolean" class="hash-link" aria-label="Direct link to boolean" title="Direct link to boolean" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1113"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">boolean</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/BooleanSchema">BooleanSchema</a></code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="boolean"><code style="text-decoration:none">boolean</code><a href="#boolean" class="hash-link" aria-label="Direct link to boolean" title="Direct link to boolean" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1212"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">boolean</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/BooleanSchema">BooleanSchema</a></code></div><div>
 <p>Creates a schema that accepts <code>true</code> or <code>false</code>.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="array"><code style="text-decoration:none">array</code><a href="#array" class="hash-link" aria-label="Direct link to array" title="Direct link to array" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1131"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">array</code><code>(</code><div class="inset_uKQm"><div><code>item<!-- -->: </code><code class="blue_P4bS">S</code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="uuid"><code style="text-decoration:none">uuid</code><a href="#uuid" class="hash-link" aria-label="Direct link to uuid" title="Direct link to uuid" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1240"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">uuid</code><code>(</code><div class="inset_uKQm"><div><code>options<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidOptions">UuidOptions?</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>Pass <code>{ version = "v4" }</code> to pin the version</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/StringSchema">StringSchema</a></code></div><div>
+<p>
+  Creates a schema that accepts a UUID: 8-4-4-4-12 hexadecimal digits, in
+  either case, carrying a version of 1 to 8 and an RFC 9562 variant.
+</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> Id <span class="token operator">=</span> Vet<span class="token punctuation">.</span><span class="token function">uuid</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">local</span> SessionId <span class="token operator">=</span> Vet<span class="token punctuation">.</span><span class="token function">uuid</span><span class="token punctuation">(</span><span class="token punctuation">{</span> version <span class="token operator">=</span> <span class="token string">"v7"</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>
+
+Id<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"01912d68-783e-7cc0-a2f0-5f8b1d3e9a7c"</span><span class="token punctuation">)</span> <span class="token comment">--> ok</span>
+SessionId<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"6f9619ff-8b86-4d11-b42d-00cf4fc964ff"</span><span class="token punctuation">)</span>
+<span class="token comment">--> errors: expected a v7 uuid, got v4</span>
+</code></pre>
+<p>
+  Because the version and variant are checked, the nil UUID and the max UUID
+  are both rejected. Use <a href="/vet/api/Vet#guid">Vet.guid</a> when you only care about the layout.
+</p>
+<p>
+  The result is a plain <a href="/vet/api/StringSchema">StringSchema</a>, so <code>:optional()</code>, <code>:default()</code> and
+  <code>Vet.infer</code> behave exactly as they do for any other string.
+</p>
+</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;unknown uuid version ...&quot;</td><td>Thrown when `options.version` is not v4 to v8</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="guid"><code style="text-decoration:none">guid</code><a href="#guid" class="hash-link" aria-label="Direct link to guid" title="Direct link to guid" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1264"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">guid</code><code>(</code><div class="inset_uKQm"><div><code>options<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidOptions">UuidOptions?</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>Pass <code>{ version = "v4" }</code> to pin the version</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/StringSchema">StringSchema</a></code></div><div>
+<p>
+  Creates a schema that accepts a GUID: the same 8-4-4-4-12 layout as
+  <a href="/vet/api/Vet#uuid">Vet.uuid</a>, optionally wrapped in braces, with no variant requirement.
+</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> Id <span class="token operator">=</span> Vet<span class="token punctuation">.</span><span class="token function">guid</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+Id<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"{6F9619FF-8B86-D011-B42D-00CF4FC964FF}"</span><span class="token punctuation">)</span> <span class="token comment">--> ok</span>
+Id<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"6f9619ff-8b86-d011-b42d-00cf4fc964ff"</span><span class="token punctuation">)</span>   <span class="token comment">--> ok</span>
+</code></pre>
+<p>
+  This is the shape <code>HttpService:GenerateGUID</code> returns, which is braced and
+  uppercase by default. Values Microsoft produced do not always follow the
+  RFC variant rule, so only the layout is enforced unless you pass a version.
+</p>
+</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;unknown guid version ...&quot;</td><td>Thrown when `options.version` is not v4 to v8</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="array"><code style="text-decoration:none">array</code><a href="#array" class="hash-link" aria-label="Direct link to array" title="Direct link to array" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1282"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">array</code><code>(</code><div class="inset_uKQm"><div><code>item<!-- -->: </code><code class="blue_P4bS">S</code><span class="inlineDescription_G7Er">-- <span>
 <p>Schema every element must satisfy</p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/ArraySchema">ArraySchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">Vet.infer</code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">S</code><code class="op_lSLc">&gt;</code><code class="op_lSLc">&gt;</code></div><div>
 <p>Creates a schema that accepts an array of <code>item</code>.</p>
@@ -91,7 +137,7 @@ type Nickname <span class="token operator">=</span> Vet<span class="token punctu
 Scores<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span> <span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token comment">--> { 1, 2, 3 }</span>
 Scores<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1.5</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>  <span class="token comment">--> errors: [2]: expected an integer, got 1.5</span>
 </code></pre>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="object"><code style="text-decoration:none">object</code><a href="#object" class="hash-link" aria-label="Direct link to object" title="Direct link to object" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1156"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">object</code><code>(</code><div class="inset_uKQm"><div><code>shape<!-- -->: </code><code class="blue_P4bS">S</code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="object"><code style="text-decoration:none">object</code><a href="#object" class="hash-link" aria-label="Direct link to object" title="Direct link to object" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1307"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">object</code><code>(</code><div class="inset_uKQm"><div><code>shape<!-- -->: </code><code class="blue_P4bS">S</code><span class="inlineDescription_G7Er">-- <span>
 <p>Table mapping field names to schemas</p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/ObjectSchema">ObjectSchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">Vet.objectOutput</code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">S</code><code class="op_lSLc">&gt;</code><code class="op_lSLc">&gt;</code></div><div>
 <p>
@@ -119,7 +165,7 @@ type User <span class="token operator">=</span> Vet<span class="token punctuatio
             ],
             &quot;function_type&quot;: &quot;static&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 1093,
+                &quot;line&quot;: 1192,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -135,7 +181,7 @@ type User <span class="token operator">=</span> Vet<span class="token punctuatio
             ],
             &quot;function_type&quot;: &quot;static&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 1103,
+                &quot;line&quot;: 1202,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -151,7 +197,63 @@ type User <span class="token operator">=</span> Vet<span class="token punctuatio
             ],
             &quot;function_type&quot;: &quot;static&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 1113,
+                &quot;line&quot;: 1212,
+                &quot;path&quot;: &quot;src/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;uuid&quot;,
+            &quot;desc&quot;: &quot;Creates a schema that accepts a UUID: 8-4-4-4-12 hexadecimal digits, in\neither case, carrying a version of 1 to 8 and an RFC 9562 variant.\n\n```lua\nlocal Id = Vet.uuid()\nlocal SessionId = Vet.uuid({ version = \&quot;v7\&quot; })\n\nId:parse(\&quot;01912d68-783e-7cc0-a2f0-5f8b1d3e9a7c\&quot;) --&gt; ok\nSessionId:parse(\&quot;6f9619ff-8b86-4d11-b42d-00cf4fc964ff\&quot;)\n--&gt; errors: expected a v7 uuid, got v4\n```\n\nBecause the version and variant are checked, the nil UUID and the max UUID\nare both rejected. Use [Vet.guid] when you only care about the layout.\n\nThe result is a plain [StringSchema], so `:optional()`, `:default()` and\n`Vet.infer` behave exactly as they do for any other string.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;options&quot;,
+                    &quot;desc&quot;: &quot;Pass `{ version = \&quot;v4\&quot; }` to pin the version&quot;,
+                    &quot;lua_type&quot;: &quot;UuidOptions?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;StringSchema&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;errors&quot;: [
+                {
+                    &quot;lua_type&quot;: &quot;\&quot;unknown uuid version ...\&quot;&quot;,
+                    &quot;desc&quot;: &quot;Thrown when `options.version` is not v4 to v8&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 1240,
+                &quot;path&quot;: &quot;src/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;guid&quot;,
+            &quot;desc&quot;: &quot;Creates a schema that accepts a GUID: the same 8-4-4-4-12 layout as\n[Vet.uuid], optionally wrapped in braces, with no variant requirement.\n\n```lua\nlocal Id = Vet.guid()\n\nId:parse(\&quot;{6F9619FF-8B86-D011-B42D-00CF4FC964FF}\&quot;) --&gt; ok\nId:parse(\&quot;6f9619ff-8b86-d011-b42d-00cf4fc964ff\&quot;)   --&gt; ok\n```\n\nThis is the shape `HttpService:GenerateGUID` returns, which is braced and\nuppercase by default. Values Microsoft produced do not always follow the\nRFC variant rule, so only the layout is enforced unless you pass a version.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;options&quot;,
+                    &quot;desc&quot;: &quot;Pass `{ version = \&quot;v4\&quot; }` to pin the version&quot;,
+                    &quot;lua_type&quot;: &quot;UuidOptions?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;StringSchema&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;errors&quot;: [
+                {
+                    &quot;lua_type&quot;: &quot;\&quot;unknown guid version ...\&quot;&quot;,
+                    &quot;desc&quot;: &quot;Thrown when `options.version` is not v4 to v8&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 1264,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -173,7 +275,7 @@ type User <span class="token operator">=</span> Vet<span class="token punctuatio
             ],
             &quot;function_type&quot;: &quot;static&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 1131,
+                &quot;line&quot;: 1282,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -195,7 +297,7 @@ type User <span class="token operator">=</span> Vet<span class="token punctuatio
             ],
             &quot;function_type&quot;: &quot;static&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 1156,
+                &quot;line&quot;: 1307,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         }
@@ -248,6 +350,30 @@ type User <span class="token operator">=</span> Vet<span class="token punctuatio
                 &quot;line&quot;: 133,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
+        },
+        {
+            &quot;name&quot;: &quot;UuidVersion&quot;,
+            &quot;desc&quot;: &quot;Versions accepted by [Vet.uuid] and [Vet.guid]. Version 4 is random, 5 is\nname-based, 6 is reordered time, 7 is Unix epoch time, and 8 is custom.&quot;,
+            &quot;lua_type&quot;: &quot;\&quot;v4\&quot; | \&quot;v5\&quot; | \&quot;v6\&quot; | \&quot;v7\&quot; | \&quot;v8\&quot;&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 1092,
+                &quot;path&quot;: &quot;src/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;UuidOptions&quot;,
+            &quot;desc&quot;: &quot;&quot;,
+            &quot;fields&quot;: [
+                {
+                    &quot;name&quot;: &quot;version&quot;,
+                    &quot;lua_type&quot;: &quot;UuidVersion?&quot;,
+                    &quot;desc&quot;: &quot;Version the identifier must declare&quot;
+                }
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 1099,
+                &quot;path&quot;: &quot;src/init.luau&quot;
+            }
         }
     ],
     &quot;name&quot;: &quot;Vet&quot;,
@@ -256,6 +382,6 @@ type User <span class="token operator">=</span> Vet<span class="token punctuatio
         &quot;line&quot;: 17,
         &quot;path&quot;: &quot;src/init.luau&quot;
     }
-}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#infer&lt;S&gt;" class="table-of-contents__link toc-highlight">infer<s></s></a></li><li><a href="#Issue" class="table-of-contents__link toc-highlight">Issue</a></li><li><a href="#objectOutput&lt;S&gt;" class="table-of-contents__link toc-highlight">objectOutput<s></s></a></li><li><a href="#Result&lt;T&gt;" class="table-of-contents__link toc-highlight">Result<t></t></a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#array" class="table-of-contents__link toc-highlight">.array</a></li><li><a href="#boolean" class="table-of-contents__link toc-highlight">.boolean</a></li><li><a href="#number" class="table-of-contents__link toc-highlight">.number</a></li><li><a href="#object" class="table-of-contents__link toc-highlight">.object</a></li><li><a href="#string" class="table-of-contents__link toc-highlight">.string</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 imkylecat. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#infer&lt;S&gt;" class="table-of-contents__link toc-highlight">infer<s></s></a></li><li><a href="#Issue" class="table-of-contents__link toc-highlight">Issue</a></li><li><a href="#objectOutput&lt;S&gt;" class="table-of-contents__link toc-highlight">objectOutput<s></s></a></li><li><a href="#Result&lt;T&gt;" class="table-of-contents__link toc-highlight">Result<t></t></a></li><li><a href="#UuidOptions" class="table-of-contents__link toc-highlight">UuidOptions</a></li><li><a href="#UuidVersion" class="table-of-contents__link toc-highlight">UuidVersion</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#array" class="table-of-contents__link toc-highlight">.array</a></li><li><a href="#boolean" class="table-of-contents__link toc-highlight">.boolean</a></li><li><a href="#guid" class="table-of-contents__link toc-highlight">.guid</a></li><li><a href="#number" class="table-of-contents__link toc-highlight">.number</a></li><li><a href="#object" class="table-of-contents__link toc-highlight">.object</a></li><li><a href="#string" class="table-of-contents__link toc-highlight">.string</a></li><li><a href="#uuid" class="table-of-contents__link toc-highlight">.uuid</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 imkylecat. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
 </body>
 </html>
