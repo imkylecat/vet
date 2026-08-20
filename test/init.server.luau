@@ -95,6 +95,28 @@ local firstTags = Tags:parse(nil)
 table.insert(firstTags, "hi")
 assert(#Tags:parse(nil) == 0)
 
+-- Field schemas stay reachable, so a single field can be checked on its own.
+assert(Settings.shape.volume:parse(0.25) == 0.25)
+assert(not Settings.shape.volume:safeParse(2).success)
+assert(Settings.shape.volume:parse(nil) == 0.5)
+assert(table.isfrozen(Settings.shape))
+assert(not pcall(function()
+    Settings.shape.volume = Vet.string()
+end))
+
+-- The field schemas stay reachable, so one field can be checked on its own.
+assert(Settings.shape.volume:parse(nil) == 0.5)
+assert(not Settings.shape.volume:safeParse(2).success)
+assert(table.isfrozen(Settings.shape))
+assert(not pcall(function()
+    (Settings.shape :: any).volume = Vet.string()
+end))
+
+-- A field schema can be reused in another object.
+local JustVolume = Vet.object({ volume = Settings.shape.volume })
+
+assert(JustVolume:parse({}).volume == 0.5)
+
 local Waypoint = Vet.tuple({ Vet.string(), Vet.number():integer() })
 
 assert(Waypoint:parse({ "spawn", 3 })[2] == 3)

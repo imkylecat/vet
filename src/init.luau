@@ -1140,19 +1140,46 @@ end
 		level = v.number():integer(),
 	})
 	```
+
+	The field schemas stay reachable through [ObjectSchema.shape], so a single
+	field can be validated on its own.
 ]=]
-export type ObjectSchema<T> = {
-    safeParse: (self: ObjectSchema<T>, value: unknown) -> Result<T>,
-    parse: (self: ObjectSchema<T>, value: unknown) -> T,
-    strict: (self: ObjectSchema<T>) -> ObjectSchema<T>,
-    optional: (self: ObjectSchema<T>) -> OptionalSchema<T>,
-    default: (self: ObjectSchema<T>, fallback: T | () -> T) -> DefaultSchema<T>,
+export type ObjectSchema<T, S> = {
+    shape: S,
+    safeParse: (self: ObjectSchema<T, S>, value: unknown) -> Result<T>,
+    parse: (self: ObjectSchema<T, S>, value: unknown) -> T,
+    strict: (self: ObjectSchema<T, S>) -> ObjectSchema<T, S>,
+    optional: (self: ObjectSchema<T, S>) -> OptionalSchema<T>,
+    default: (self: ObjectSchema<T, S>, fallback: T | () -> T) -> DefaultSchema<T>,
 }
 
 type Shape = { [string]: { safeParse: (any, unknown) -> Result<any> } }
 
-local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
+local function newObject<T, S>(shape: Shape, strict: boolean): ObjectSchema<T, S>
     local self = {}
+
+    --[=[
+		@within ObjectSchema
+		@prop shape S
+		@tag Reflection
+		@readonly
+
+		The schemas this object was built from, so a field can be reused or
+		validated on its own:
+
+		```lua
+		local Profile = v.object({ Level = v.number():integer():min(1) })
+
+		Profile.shape.Level:parse(42) --> 42
+		Profile.shape.Level:parse(0)  --> errors: expected at least 1, got 0
+		```
+
+		The table is a frozen copy of the one passed to [Vet.object], so
+		mutating it fails loudly rather than corrupting the schema.
+	]=]
+    local fields = table.freeze(table.clone(shape))
+
+    self.shape = fields
 
     --[=[
 		@within ObjectSchema
@@ -1173,7 +1200,7 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
         local output = value :: any
         local copied = false
 
-        for key, schema in shape do
+        for key, schema in fields do
             local raw = (value :: any)[key]
             local result = schema:safeParse(raw)
 
@@ -1197,7 +1224,7 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
 
         if strict then
             for key in value :: any do
-                if shape[key] == nil then
+                if fields[key] == nil then
                     table.insert(issues, { path = { key }, message = "unexpected key" })
                 end
             end
@@ -1233,14 +1260,14 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
 		@within ObjectSchema
 		@method strict
 		@tag Refinement
-		@return ObjectSchema<T>
+		@return ObjectSchema<T, S>
 
 		Returns a schema that also rejects keys absent from the shape. Use it
 		for data crossing a trust boundary, where an unexpected field is more
 		likely a mistake than a spare.
 	]=]
-    function self:strict(): ObjectSchema<T>
-        return newObject(shape, true)
+    function self:strict(): ObjectSchema<T, S>
+        return newObject(fields, true)
     end
 
     --[=[
@@ -1274,7 +1301,7 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
         end, fallback)
     end
 
-    return (self :: any) :: ObjectSchema<T>
+    return (self :: any) :: ObjectSchema<T, S>
 end
 
 --[=[
@@ -1517,7 +1544,7 @@ end
 	@within Vet
 	@tag Constructor
 	@param shape S -- Table mapping field names to schemas
-	@return ObjectSchema<Vet.objectOutput<S>>
+	@return ObjectSchema<Vet.objectOutput<S>, S>
 
 	Creates a schema that validates a table field by field. The field types come
 	from the shape, so the schema is the only place they are declared.
@@ -1531,7 +1558,7 @@ end
 	type User = v.infer<typeof(User)> --> { name: string, nickname: string? }
 	```
 ]=]
-function Vet.object<S>(shape: S): ObjectSchema<objectOutput<S>>
+function Vet.object<S>(shape: S): ObjectSchema<objectOutput<S>, S>
     return newObject((shape :: any) :: Shape, false)
 end
 
