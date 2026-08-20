@@ -6,9 +6,9 @@
 	Lua-first schema validation with type inference.
 
 	```lua
-	local Vet = require(ReplicatedStorage.Packages.Vet)
+	local v = require(ReplicatedStorage.Packages.Vet)
 
-	local Name = Vet.string():min(3):max(22)
+	local Name = v.string():min(3):max(22)
 
 	Name:parse("kyle") --> "kyle"
 	Name:parse("ky")   --> errors
@@ -43,11 +43,11 @@ export type Result<T> = { success: true, value: T } | { success: false, issues: 
 	of truth for both validation and types.
 
 	```lua
-	local Username = Vet.string():min(3)
-	type Username = Vet.infer<typeof(Username)> --> string
+	local Username = v.string():min(3)
+	type Username = v.infer<typeof(Username)> --> string
 
-	local Nickname = Vet.string():optional()
-	type Nickname = Vet.infer<typeof(Nickname)> --> string?
+	local Nickname = v.string():optional()
+	type Nickname = v.infer<typeof(Nickname)> --> string?
 	```
 
 	Given a union of schemas, the result is the union of what each one parses
@@ -253,7 +253,7 @@ end
 	refinements before it still apply to non-nil values.
 
 	```lua
-	local Nickname = Vet.string():max(20):optional()
+	local Nickname = v.string():max(20):optional()
 
 	Nickname:parse(nil)        --> nil
 	Nickname:parse("kyle")     --> "kyle"
@@ -328,7 +328,7 @@ end
 	value.
 
 	```lua
-	local Volume = Vet.number():min(0):max(1):default(0.5)
+	local Volume = v.number():min(0):max(1):default(0.5)
 
 	Volume:parse(nil)  --> 0.5
 	Volume:parse(0.2)  --> 0.2
@@ -339,7 +339,7 @@ end
 	since a constant would be shared by every caller:
 
 	```lua
-	local Tags = Vet.array(Vet.string()):default(function()
+	local Tags = v.array(v.string()):default(function()
 		return {}
 	end)
 	```
@@ -415,7 +415,7 @@ end
 	can be shared and specialised without being modified.
 
 	```lua
-	local Base = Vet.string()
+	local Base = v.string()
 	local Username = Base:min(3):max(22)
 	```
 ]=]
@@ -544,7 +544,7 @@ end
 	Validates numbers. NaN is rejected before any refinement runs.
 
 	```lua
-	local Level = Vet.number():integer():min(1):max(100)
+	local Level = v.number():integer():min(1):max(100)
 	```
 ]=]
 type NumberImpl = {
@@ -676,7 +676,7 @@ end
 	`"true"`, are rejected.
 
 	```lua
-	local Enabled = Vet.boolean()
+	local Enabled = v.boolean()
 	```
 ]=]
 type BooleanImpl = {
@@ -788,7 +788,7 @@ end
 	Tables carrying non-array keys are rejected outright.
 
 	```lua
-	local Scores = Vet.array(Vet.number():integer()):max(4)
+	local Scores = v.array(v.number():integer()):max(4)
 	```
 ]=]
 export type ArraySchema<T> = {
@@ -950,9 +950,9 @@ end
 	the value handed to `parse` is never modified.
 
 	```lua
-	local User = Vet.object({
-		name = Vet.string():min(3),
-		level = Vet.number():integer(),
+	local User = v.object({
+		name = v.string():min(3),
+		level = v.number():integer(),
 	})
 	```
 ]=]
@@ -1223,8 +1223,8 @@ end
 	either case, carrying a version of 1 to 8 and an RFC 9562 variant.
 
 	```lua
-	local Id = Vet.uuid()
-	local SessionId = Vet.uuid({ version = "v7" })
+	local Id = v.uuid()
+	local SessionId = v.uuid({ version = "v7" })
 
 	Id:parse("01912d68-783e-7cc0-a2f0-5f8b1d3e9a7c") --> ok
 	SessionId:parse("6f9619ff-8b86-4d11-b42d-00cf4fc964ff")
@@ -1251,7 +1251,7 @@ end
 	[Vet.uuid], optionally wrapped in braces, with no variant requirement.
 
 	```lua
-	local Id = Vet.guid()
+	local Id = v.guid()
 
 	Id:parse("{6F9619FF-8B86-D011-B42D-00CF4FC964FF}") --> ok
 	Id:parse("6f9619ff-8b86-d011-b42d-00cf4fc964ff")   --> ok
@@ -1273,7 +1273,7 @@ end
 	Creates a schema that accepts an array of `item`.
 
 	```lua
-	local Scores = Vet.array(Vet.number():integer())
+	local Scores = v.array(v.number():integer())
 
 	Scores:parse({ 1, 2, 3 }) --> { 1, 2, 3 }
 	Scores:parse({ 1, 1.5 })  --> errors: [2]: expected an integer, got 1.5
@@ -1296,12 +1296,12 @@ end
 	from the shape, so the schema is the only place they are declared.
 
 	```lua
-	local User = Vet.object({
-		name = Vet.string():min(3),
-		nickname = Vet.string():optional(),
+	local User = v.object({
+		name = v.string():min(3),
+		nickname = v.string():optional(),
 	})
 
-	type User = Vet.infer<typeof(User)> --> { name: string, nickname: string? }
+	type User = v.infer<typeof(User)> --> { name: string, nickname: string? }
 	```
 ]=]
 function Vet.object<S>(shape: S): ObjectSchema<objectOutput<S>>

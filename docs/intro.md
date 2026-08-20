@@ -21,20 +21,20 @@ Then run `wally install`.
 ## Your first schema
 
 ```lua
-local Vet = require(ReplicatedStorage.Packages.Vet)
+local v = require(ReplicatedStorage.Packages.Vet)
 
-local Username = Vet.string():min(3):max(22)
+local Username = v.string():min(3):max(22)
 
 Username:parse("kyle") --> "kyle"
 Username:parse("ky")   --> errors: expected at least 3 characters, got 2
 ```
 
-Every schema starts from a constructor on `Vet` and is narrowed by chaining
+Every schema starts from a constructor on `v` and is narrowed by chaining
 refinements. Refinements return a *new* schema, so a base schema is safe to
 share:
 
 ```lua
-local Base = Vet.string()
+local Base = v.string()
 local Short = Base:max(10)
 local Long = Base:min(50)
 -- Base itself stays unconstrained
@@ -68,21 +68,21 @@ failure rather than stopping at the first.
 
 ## Inferring types
 
-`Vet.infer` extracts the type a schema parses to, so the schema stays the only
+`v.infer` extracts the type a schema parses to, so the schema stays the only
 place your field types are written down:
 
 ```lua
-local User = Vet.object({
-	name = Vet.string():min(3),
-	nickname = Vet.string():optional(),
+local User = v.object({
+	name = v.string():min(3),
+	nickname = v.string():optional(),
 })
 
-type User = Vet.infer<typeof(User)>
+type User = v.infer<typeof(User)>
 --> { name: string, nickname: string? }
 ```
 
 It works on every schema, including nested objects and arrays.
 
-`Vet.infer` is a user-defined type function, so it runs during analysis and
+`v.infer` is a user-defined type function, so it runs during analysis and
 costs nothing at runtime. It needs a Luau version that supports user-defined
 type functions — in editors that means enabling the new type solver.
