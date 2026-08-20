@@ -7,7 +7,7 @@ changelog = true
 classOrder = []
 
 [docusaurus]
-projectName = "vet"
+projectName = "Vet"
 organizationName = "imkylecat"
 url = "https://imkylecat.github.io"
 baseUrl = "/vet/"
