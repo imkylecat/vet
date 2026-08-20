@@ -1,0 +1,22 @@
+{
+  "name": "vet-dev",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "Vet": {
+        "$path": "src"
+      },
+      "Packages": {
+        "$path": { "optional": "Packages" }
+      }
+    },
+
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "Tests": {
+        "$path": "test"
+      }
+    }
+  }
+}

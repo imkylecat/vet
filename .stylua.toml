@@ -1,0 +1,5 @@
+syntax = "Luau"
+indent_type = "Spaces"
+
+[sort_requires]
+enabled = true

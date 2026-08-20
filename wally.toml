@@ -1,0 +1,16 @@
+[package]
+name = "imkylecat/vet"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+description = "A Luau library"
+license = "MIT"
+exclude = ["**"]
+include = [
+	"src",
+	"src/**",
+	"default.project.json",
+	"wally.toml",
+	"README.md",
+	"LICENSE",
+]

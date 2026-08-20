@@ -1,0 +1,18 @@
+title = "vet"
+gitRepoUrl = "https://github.com/imkylecat/vet"
+gitSourceBranch = "main"
+changelog = true
+
+# Order classes appear in the API sidebar
+classOrder = []
+
+[docusaurus]
+projectName = "vet"
+organizationName = "imkylecat"
+url = "https://imkylecat.github.io"
+baseUrl = "/vet/"
+tagline = "Lua-first schema validation with type inference"
+
+[home]
+enabled = true
+includeReadme = true
