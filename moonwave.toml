@@ -3,8 +3,21 @@ gitRepoUrl = "https://github.com/imkylecat/vet"
 gitSourceBranch = "main"
 changelog = true
 
-# Order classes appear in the API sidebar
-classOrder = []
+# Order classes appear in the API sidebar. Entry point first, then the schemas
+# you construct directly, then the wrappers you only reach through a method.
+classOrder = [
+	"Vet",
+	"StringSchema",
+	"NumberSchema",
+	"BooleanSchema",
+	"ArraySchema",
+	"ObjectSchema",
+	"OptionalSchema",
+	"DefaultSchema",
+]
+
+# Groups the table of contents on each API page by @tag.
+apiCategories = ["Constructor", "Parsing", "Refinement", "Wrapper"]
 
 [docusaurus]
 projectName = "Vet"

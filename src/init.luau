@@ -271,13 +271,15 @@ local function newOptional<T>(inner: (value: unknown) -> Result<T>): OptionalSch
 
     --[=[
 		@within OptionalSchema
+		@method safeParse
+		@tag Parsing
 		@param value unknown
 		@return Result<T?>
 
 		Succeeds with `nil` when `value` is `nil`, and otherwise defers to the
 		wrapped schema.
 	]=]
-    function self.safeParse(_self: any, value: unknown): Result<T?>
+    function self:safeParse(value: unknown): Result<T?>
         if value == nil then
             return { success = true, value = nil }
         end
@@ -292,14 +294,16 @@ local function newOptional<T>(inner: (value: unknown) -> Result<T>): OptionalSch
 
     --[=[
 		@within OptionalSchema
+		@method parse
+		@tag Parsing
 		@param value unknown
 		@return T?
 		@error "expected ..." -- Thrown when a non-nil `value` fails validation
 
 		Validates `value` and returns it, throwing on failure.
 	]=]
-    function self.parse(selfRef: any, value: unknown): T?
-        local result = self.safeParse(selfRef, value)
+    function self:parse(value: unknown): T?
+        local result = self:safeParse(value)
         if result.success then
             return result.value
         end
@@ -309,12 +313,14 @@ local function newOptional<T>(inner: (value: unknown) -> Result<T>): OptionalSch
 
     --[=[
 		@within OptionalSchema
+		@method optional
+		@tag Wrapper
 		@return OptionalSchema<T>
 
 		Returns the same schema, since it already accepts `nil`.
 	]=]
-    function self.optional(selfRef: any): OptionalSchema<T>
-        return selfRef
+    function self:optional(): OptionalSchema<T>
+        return self
     end
 
     return (self :: any) :: OptionalSchema<T>
@@ -370,13 +376,15 @@ local function newDefault<T>(inner: (value: unknown) -> Result<T>, fallback: T |
 
     --[=[
 		@within DefaultSchema
+		@method safeParse
+		@tag Parsing
 		@param value unknown
 		@return Result<T>
 
 		Returns the fallback when `value` is `nil`, and otherwise defers to the
 		wrapped schema. A fallback built by a function is validated too.
 	]=]
-    function self.safeParse(_self: any, value: unknown): Result<T>
+    function self:safeParse(value: unknown): Result<T>
         if value == nil then
             if produce ~= nil then
                 return inner(produce())
@@ -390,14 +398,16 @@ local function newDefault<T>(inner: (value: unknown) -> Result<T>, fallback: T |
 
     --[=[
 		@within DefaultSchema
+		@method parse
+		@tag Parsing
 		@param value unknown
 		@return T
 		@error "expected ..." -- Thrown when a non-nil `value` fails validation
 
 		Validates `value` and returns it, throwing on failure.
 	]=]
-    function self.parse(selfRef: any, value: unknown): T
-        local result = self.safeParse(selfRef, value)
+    function self:parse(value: unknown): T
+        local result = self:safeParse(value)
         if result.success then
             return result.value
         end
@@ -441,6 +451,7 @@ end
 
 --[=[
 	@within StringSchema
+	@tag Parsing
 	@param value unknown
 	@return Result<string>
 
@@ -457,6 +468,7 @@ end
 
 --[=[
 	@within StringSchema
+	@tag Parsing
 	@param value unknown
 	@return string
 	@error "expected ..." -- Thrown when `value` fails validation
@@ -474,6 +486,7 @@ end
 
 --[=[
 	@within StringSchema
+	@tag Refinement
 	@param n number -- Minimum length, inclusive
 	@return StringSchema
 
@@ -487,6 +500,7 @@ end
 
 --[=[
 	@within StringSchema
+	@tag Refinement
 	@param n number -- Maximum length, inclusive
 	@return StringSchema
 
@@ -500,6 +514,7 @@ end
 
 --[=[
 	@within StringSchema
+	@tag Refinement
 	@param n number -- Exact length
 	@return StringSchema
 
@@ -513,6 +528,7 @@ end
 
 --[=[
 	@within StringSchema
+	@tag Wrapper
 	@return OptionalSchema<string>
 
 	Wraps this schema so that `nil` is also accepted.
@@ -526,6 +542,7 @@ end
 
 --[=[
 	@within StringSchema
+	@tag Wrapper
 	@param fallback string | () -> string -- Value used when parsing `nil`
 	@return DefaultSchema<string>
 
@@ -569,6 +586,7 @@ end
 
 --[=[
 	@within NumberSchema
+	@tag Parsing
 	@param value unknown
 	@return Result<number>
 
@@ -589,6 +607,7 @@ end
 
 --[=[
 	@within NumberSchema
+	@tag Parsing
 	@param value unknown
 	@return number
 	@error "expected ..." -- Thrown when `value` fails validation
@@ -606,6 +625,7 @@ end
 
 --[=[
 	@within NumberSchema
+	@tag Refinement
 	@param n number -- Minimum value, inclusive
 	@return NumberSchema
 
@@ -619,6 +639,7 @@ end
 
 --[=[
 	@within NumberSchema
+	@tag Refinement
 	@param n number -- Maximum value, inclusive
 	@return NumberSchema
 
@@ -632,6 +653,7 @@ end
 
 --[=[
 	@within NumberSchema
+	@tag Refinement
 	@return NumberSchema
 
 	Requires the number to have no fractional part. Infinities are rejected.
@@ -644,6 +666,7 @@ end
 
 --[=[
 	@within NumberSchema
+	@tag Wrapper
 	@return OptionalSchema<number>
 
 	Wraps this schema so that `nil` is also accepted.
@@ -657,6 +680,7 @@ end
 
 --[=[
 	@within NumberSchema
+	@tag Wrapper
 	@param fallback number | () -> number -- Value used when parsing `nil`
 	@return DefaultSchema<number>
 
@@ -700,6 +724,7 @@ end
 
 --[=[
 	@within BooleanSchema
+	@tag Parsing
 	@param value unknown
 	@return Result<boolean>
 
@@ -715,6 +740,7 @@ end
 
 --[=[
 	@within BooleanSchema
+	@tag Parsing
 	@param value unknown
 	@return boolean
 	@error "expected ..." -- Thrown when `value` fails validation
@@ -732,6 +758,7 @@ end
 
 --[=[
 	@within BooleanSchema
+	@tag Refinement
 	@return BooleanSchema
 
 	Requires the value to be `true`.
@@ -744,6 +771,7 @@ end
 
 --[=[
 	@within BooleanSchema
+	@tag Refinement
 	@return BooleanSchema
 
 	Requires the value to be `false`.
@@ -756,6 +784,7 @@ end
 
 --[=[
 	@within BooleanSchema
+	@tag Wrapper
 	@return OptionalSchema<boolean>
 
 	Wraps this schema so that `nil` is also accepted.
@@ -769,6 +798,7 @@ end
 
 --[=[
 	@within BooleanSchema
+	@tag Wrapper
 	@param fallback boolean | () -> boolean -- Value used when parsing `nil`
 	@return DefaultSchema<boolean>
 
@@ -807,13 +837,15 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
 
     --[=[
 		@within ArraySchema
+		@method safeParse
+		@tag Parsing
 		@param value unknown
 		@return Result<{ T }>
 
 		Validates every element, reporting each failure with its index in the
 		issue path.
 	]=]
-    function self.safeParse(_self: any, value: unknown): Result<{ T }>
+    function self:safeParse(value: unknown): Result<{ T }>
         if type(value) ~= "table" then
             return fail(`expected an array, got {typeof(value)}`)
         end
@@ -861,14 +893,16 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
 
     --[=[
 		@within ArraySchema
+		@method parse
+		@tag Parsing
 		@param value unknown
 		@return { T }
 		@error "expected ..." -- Thrown when `value` fails validation
 
 		Validates `value` and returns it, throwing on failure.
 	]=]
-    function self.parse(selfRef: any, value: unknown): { T }
-        local result = self.safeParse(selfRef, value)
+    function self:parse(value: unknown): { T }
+        local result = self:safeParse(value)
         if result.success then
             return result.value
         end
@@ -878,12 +912,14 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
 
     --[=[
 		@within ArraySchema
+		@method min
+		@tag Refinement
 		@param n number -- Minimum element count, inclusive
 		@return ArraySchema<T>
 
 		Requires the array to hold at least `n` elements.
 	]=]
-    function self.min(_self: any, n: number): ArraySchema<T>
+    function self:min(n: number): ArraySchema<T>
         return newArray(
             inner,
             append(checks, function(length)
@@ -894,12 +930,14 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
 
     --[=[
 		@within ArraySchema
+		@method max
+		@tag Refinement
 		@param n number -- Maximum element count, inclusive
 		@return ArraySchema<T>
 
 		Requires the array to hold at most `n` elements.
 	]=]
-    function self.max(_self: any, n: number): ArraySchema<T>
+    function self:max(n: number): ArraySchema<T>
         return newArray(
             inner,
             append(checks, function(length)
@@ -910,18 +948,22 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
 
     --[=[
 		@within ArraySchema
+		@method optional
+		@tag Wrapper
 		@return OptionalSchema<{ T }>
 
 		Wraps this schema so that `nil` is also accepted.
 	]=]
-    function self.optional(selfRef: any): OptionalSchema<{ T }>
+    function self:optional(): OptionalSchema<{ T }>
         return newOptional(function(value)
-            return selfRef:safeParse(value)
+            return self:safeParse(value)
         end)
     end
 
     --[=[
 		@within ArraySchema
+		@method default
+		@tag Wrapper
 		@param fallback { T } | () -> { T } -- Value used when parsing `nil`
 		@return DefaultSchema<{ T }>
 
@@ -929,9 +971,9 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
 		Prefer passing a function, since a constant array would be shared by
 		every parse.
 	]=]
-    function self.default(selfRef: any, fallback: { T } | () -> { T }): DefaultSchema<{ T }>
+    function self:default(fallback: { T } | () -> { T }): DefaultSchema<{ T }>
         return newDefault(function(value)
-            return selfRef:safeParse(value)
+            return self:safeParse(value)
         end, fallback)
     end
 
@@ -971,13 +1013,15 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
 
     --[=[
 		@within ObjectSchema
+		@method safeParse
+		@tag Parsing
 		@param value unknown
 		@return Result<T>
 
 		Validates every field in the shape, reporting each failure with its
 		field name in the issue path.
 	]=]
-    function self.safeParse(_self: any, value: unknown): Result<T>
+    function self:safeParse(value: unknown): Result<T>
         if type(value) ~= "table" then
             return fail(`expected an object, got {typeof(value)}`)
         end
@@ -1025,14 +1069,16 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
 
     --[=[
 		@within ObjectSchema
+		@method parse
+		@tag Parsing
 		@param value unknown
 		@return T
 		@error "expected ..." -- Thrown when `value` fails validation
 
 		Validates `value` and returns it, throwing on failure.
 	]=]
-    function self.parse(selfRef: any, value: unknown): T
-        local result = self.safeParse(selfRef, value)
+    function self:parse(value: unknown): T
+        local result = self:safeParse(value)
         if result.success then
             return result.value
         end
@@ -1042,30 +1088,36 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
 
     --[=[
 		@within ObjectSchema
+		@method strict
+		@tag Refinement
 		@return ObjectSchema<T>
 
 		Returns a schema that also rejects keys absent from the shape. Use it
 		for data crossing a trust boundary, where an unexpected field is more
 		likely a mistake than a spare.
 	]=]
-    function self.strict(_self: any): ObjectSchema<T>
+    function self:strict(): ObjectSchema<T>
         return newObject(shape, true)
     end
 
     --[=[
 		@within ObjectSchema
+		@method optional
+		@tag Wrapper
 		@return OptionalSchema<T>
 
 		Wraps this schema so that `nil` is also accepted.
 	]=]
-    function self.optional(selfRef: any): OptionalSchema<T>
+    function self:optional(): OptionalSchema<T>
         return newOptional(function(value)
-            return selfRef:safeParse(value)
+            return self:safeParse(value)
         end)
     end
 
     --[=[
 		@within ObjectSchema
+		@method default
+		@tag Wrapper
 		@param fallback T | () -> T -- Value used when parsing `nil`
 		@return DefaultSchema<T>
 
@@ -1073,9 +1125,9 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
 		Prefer passing a function, since a constant table would be shared by
 		every parse.
 	]=]
-    function self.default(selfRef: any, fallback: T | () -> T): DefaultSchema<T>
+    function self:default(fallback: T | () -> T): DefaultSchema<T>
         return newDefault(function(value)
-            return selfRef:safeParse(value)
+            return self:safeParse(value)
         end, fallback)
     end
 
@@ -1185,6 +1237,7 @@ local Vet = {}
 
 --[=[
 	@within Vet
+	@tag Constructor
 	@return StringSchema
 
 	Creates a schema that accepts any string.
@@ -1195,6 +1248,7 @@ end
 
 --[=[
 	@within Vet
+	@tag Constructor
 	@return NumberSchema
 
 	Creates a schema that accepts any number except NaN.
@@ -1205,6 +1259,7 @@ end
 
 --[=[
 	@within Vet
+	@tag Constructor
 	@return BooleanSchema
 
 	Creates a schema that accepts `true` or `false`.
@@ -1215,6 +1270,7 @@ end
 
 --[=[
 	@within Vet
+	@tag Constructor
 	@param options UuidOptions? -- Pass `{ version = "v4" }` to pin the version
 	@return StringSchema
 	@error "unknown uuid version ..." -- Thrown when `options.version` is not v4 to v8
@@ -1243,6 +1299,7 @@ end
 
 --[=[
 	@within Vet
+	@tag Constructor
 	@param options UuidOptions? -- Pass `{ version = "v4" }` to pin the version
 	@return StringSchema
 	@error "unknown guid version ..." -- Thrown when `options.version` is not v4 to v8
@@ -1267,6 +1324,7 @@ end
 
 --[=[
 	@within Vet
+	@tag Constructor
 	@param item S -- Schema every element must satisfy
 	@return ArraySchema<Vet.infer<S>>
 
@@ -1289,6 +1347,7 @@ end
 
 --[=[
 	@within Vet
+	@tag Constructor
 	@param shape S -- Table mapping field names to schemas
 	@return ObjectSchema<Vet.objectOutput<S>>
 
