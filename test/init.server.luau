@@ -39,6 +39,13 @@ assert(not Tint:safeParse(Vector3.new(1, 0, 0)).success)
 assert(Tint:optional():safeParse(nil).success)
 assert(Vet.color3() == Vet.color3())
 
+local Size = Vet.udim2()
+
+assert(Size:parse(UDim2.fromScale(1, 0.5)) ~= nil)
+assert(not Size:safeParse({ X = 1, Y = 0.5 }).success)
+assert(not Size:safeParse(UDim.new(1, 0)).success)
+assert(not Size:safeParse(red).success)
+
 local Kind = Vet.literal("player")
 
 assert(Kind:parse("player") == "player")

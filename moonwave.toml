@@ -11,7 +11,7 @@ classOrder = [
 	"NumberSchema",
 	"BooleanSchema",
 	"LiteralSchema",
-	"Color3Schema",
+	"DatatypeSchema",
 	"ArraySchema",
 	"TupleSchema",
 	"ObjectSchema",

@@ -1152,138 +1152,185 @@ function BooleanSchema:defaultWith(produce: () -> boolean): DefaultSchema<boolea
         return inner:_validate(value)
     end, produce, false, nil, nil)
 end
-
 --[=[
-	@class Color3Schema
+	@class DatatypeSchema
 
-	Validates a `Color3`. The check is on the datatype itself, so a table that
-	merely carries `R`, `G` and `B` fields is rejected — useful when the value
-	arrived over a remote, where anything can be sent.
+	Validates a Roblox datatype by its `typeof` name, so a table that merely
+	carries the same fields is rejected — useful when the value arrived over a
+	remote, where anything can be sent.
+
+	Reached through the named constructors rather than built directly:
+	[Vet.color3] and [Vet.udim2] both return one of these.
 
 	```lua
 	local Tint = v.color3()
+	local Size = v.udim2()
 
-	Tint:parse(Color3.new(1, 0, 0))     --> Color3(1, 0, 0)
-	Tint:parse({ R = 1, G = 0, B = 0 }) --> errors: expected Color3, got table
+	Tint:parse(Color3.new(1, 0, 0))      --> Color3(1, 0, 0)
+	Tint:parse({ R = 1, G = 0, B = 0 })  --> errors: expected Color3, got table
+	Size:parse(UDim2.fromScale(1, 1))    --> UDim2
 	```
+
+	Each datatype schema holds no state beyond the name it checks, so the
+	constructors hand out one frozen shared instance rather than allocating.
 ]=]
-type Color3Impl = {
-    __index: Color3Impl,
-    _validate: (self: Color3Schema, value: unknown) -> (Color3?, { Issue }?),
-    safeParse: (self: Color3Schema, value: unknown) -> Result<Color3>,
-    parse: (self: Color3Schema, value: unknown) -> Color3,
-    optional: (self: Color3Schema) -> OptionalSchema<Color3>,
-    default: (self: Color3Schema, fallback: Color3) -> DefaultSchema<Color3>,
-    defaultWith: (self: Color3Schema, produce: () -> Color3) -> DefaultSchema<Color3>,
+export type DatatypeSchema<T> = {
+    typeName: string,
+    isOptional: boolean,
+    _validate: (self: DatatypeSchema<T>, value: unknown) -> (T?, { Issue }?),
+    safeParse: (self: DatatypeSchema<T>, value: unknown) -> Result<T>,
+    parse: (self: DatatypeSchema<T>, value: unknown) -> T,
+    optional: (self: DatatypeSchema<T>) -> OptionalSchema<T>,
+    default: (self: DatatypeSchema<T>, fallback: T) -> DefaultSchema<T>,
+    defaultWith: (self: DatatypeSchema<T>, produce: () -> T) -> DefaultSchema<T>,
 }
 
-export type Color3Schema = typeof(setmetatable({} :: { isOptional: boolean }, {} :: Color3Impl))
+--[=[
+	@type Color3Schema DatatypeSchema<Color3>
+	@within Vet
 
-local Color3Schema = {} :: Color3Impl
-Color3Schema.__index = Color3Schema
+	What [Vet.color3] returns.
+]=]
+export type Color3Schema = DatatypeSchema<Color3>
 
 --[=[
-	@within Color3Schema
-	@prop isOptional boolean
-	@tag Reflection
-	@readonly
+	@type UDim2Schema DatatypeSchema<UDim2>
+	@within Vet
 
-	Always `false`. Colours carry no `minimum` or `maximum`.
+	What [Vet.udim2] returns.
 ]=]
+export type UDim2Schema = DatatypeSchema<UDim2>
 
---[=[
-	@within Color3Schema
-	@tag Parsing
-	@param value unknown
-	@return Result<Color3>
+local function newDatatype<T>(typeName: string): DatatypeSchema<T>
+    local self = {}
+    local this = (self :: any) :: DatatypeSchema<T>
 
-	Validates `value` without throwing.
-]=]
-function Color3Schema:_validate(value: unknown): (Color3?, { Issue }?)
-    if typeof(value) ~= "Color3" then
-        return nil, failure(`expected Color3, got {typeof(value)}`)
+    --[=[
+		@within DatatypeSchema
+		@prop typeName string
+		@tag Reflection
+		@readonly
+
+		The `typeof` name this schema accepts, such as `"Color3"`.
+	]=]
+    self.typeName = typeName
+
+    --[=[
+		@within DatatypeSchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Always `false`. Datatypes carry no `minimum` or `maximum`.
+	]=]
+    self.isOptional = false
+
+    local function validate(value: unknown): (T?, { Issue }?)
+        if typeof(value) ~= typeName then
+            return nil, failure(`expected {typeName}, got {typeof(value)}`)
+        end
+
+        return value :: any, nil
     end
 
-    return value, nil
-end
-
-function Color3Schema:safeParse(value: unknown): Result<Color3>
-    local parsed, issues = self:_validate(value)
-
-    if issues ~= nil then
-        return { success = false, issues = issues }
+    self._validate = function(_self: any, value: unknown): (T?, { Issue }?)
+        return validate(value)
     end
 
-    return { success = true, value = parsed :: Color3 }
-end
+    --[=[
+		@within DatatypeSchema
+		@method safeParse
+		@tag Parsing
+		@param value unknown
+		@return Result<T>
 
---[=[
-	@within Color3Schema
-	@tag Parsing
-	@param value unknown
-	@return Color3
-	@error "expected Color3, got ..." -- Thrown when `value` is not a Color3
+		Validates `value` without throwing.
+	]=]
+    function self:safeParse(value: unknown): Result<T>
+        local parsed, issues = validate(value)
 
-	Validates `value` and returns it, throwing on failure.
-]=]
-function Color3Schema:parse(value: unknown): Color3
-    local parsed, issues = self:_validate(value)
+        if issues ~= nil then
+            return { success = false, issues = issues }
+        end
 
-    if issues ~= nil then
-        error(describe(issues), 2)
+        return { success = true, value = parsed :: T }
     end
 
-    return parsed :: Color3
+    --[=[
+		@within DatatypeSchema
+		@method parse
+		@tag Parsing
+		@param value unknown
+		@return T
+		@error "expected ..." -- Thrown when `value` is a different type
+
+		Validates `value` and returns it, throwing on failure.
+	]=]
+    function self:parse(value: unknown): T
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
+        end
+
+        return parsed :: T
+    end
+
+    --[=[
+		@within DatatypeSchema
+		@method optional
+		@tag Wrapper
+		@return OptionalSchema<T>
+
+		Wraps this schema so that `nil` is also accepted.
+	]=]
+    function self:optional(): OptionalSchema<T>
+        return newOptional(function(value)
+            return this:_validate(value)
+        end, nil, nil)
+    end
+
+    --[=[
+		@within DatatypeSchema
+		@method default
+		@tag Wrapper
+		@param fallback T -- Value used when parsing `nil`
+		@return DefaultSchema<T>
+
+		Wraps this schema so that `nil` yields `fallback` instead of failing.
+	]=]
+    function self:default(fallback: T): DefaultSchema<T>
+        return newDefault(function(value)
+            return this:_validate(value)
+        end, function()
+            return fallback
+        end, true, nil, nil)
+    end
+
+    --[=[
+		@within DatatypeSchema
+		@method defaultWith
+		@tag Wrapper
+		@param produce () -> T -- Builds the value used when parsing `nil`
+		@return DefaultSchema<T>
+
+		Like [DatatypeSchema:default], but calls `produce` on every parse.
+	]=]
+    function self:defaultWith(produce: () -> T): DefaultSchema<T>
+        return newDefault(function(value)
+            return this:_validate(value)
+        end, produce, false, nil, nil)
+    end
+
+    -- Freezing turns the properties read-only in the type system, so the type
+    -- is named again on the way out.
+    return (table.freeze(this) :: any) :: DatatypeSchema<T>
 end
 
---[=[
-	@within Color3Schema
-	@tag Wrapper
-	@return OptionalSchema<Color3>
-
-	Wraps this schema so that `nil` is also accepted.
-]=]
-function Color3Schema:optional(): OptionalSchema<Color3>
-    local inner = self
-    return newOptional(function(value)
-        return inner:_validate(value)
-    end, nil, nil)
-end
-
---[=[
-	@within Color3Schema
-	@tag Wrapper
-	@param fallback Color3 -- Value used when parsing `nil`
-	@return DefaultSchema<Color3>
-
-	Wraps this schema so that `nil` yields `fallback` instead of failing.
-]=]
-function Color3Schema:default(fallback: Color3): DefaultSchema<Color3>
-    local inner = self
-    return newDefault(function(value)
-        return inner:_validate(value)
-    end, function()
-        return fallback
-    end, true, nil, nil)
-end
-
---[=[
-	@within Color3Schema
-	@tag Wrapper
-	@param produce () -> Color3 -- Builds the value used when parsing `nil`
-	@return DefaultSchema<Color3>
-
-	Like [Color3Schema:default], but calls `produce` on every parse.
-]=]
-function Color3Schema:defaultWith(produce: () -> Color3): DefaultSchema<Color3>
-    local inner = self
-    return newDefault(function(value)
-        return inner:_validate(value)
-    end, produce, false, nil, nil)
-end
-
--- The schema carries no state, so every caller can share one frozen instance.
-local COLOR3 = (table.freeze(setmetatable({ isOptional = false }, Color3Schema)) :: any) :: Color3Schema
+-- newDatatype has nothing to infer its type parameter from, so each datatype
+-- names its own on construction.
+local COLOR3 = (newDatatype("Color3") :: any) :: Color3Schema
+local UDIM2 = (newDatatype("UDim2") :: any) :: UDim2Schema
 
 --[=[
 	@class LiteralSchema
@@ -2358,6 +2405,25 @@ function Vet.color3(): Color3Schema
     return COLOR3
 end
 
+--[=[
+	@within Vet
+	@tag Constructor
+	@return UDim2Schema
+
+	Creates a schema that accepts a `UDim2`.
+
+	```lua
+	local Size = v.udim2()
+
+	Size:parse(UDim2.fromScale(1, 0.5)) --> UDim2
+	Size:parse({ X = 1, Y = 0.5 })      --> errors: expected UDim2, got table
+	```
+
+	The schema holds no state, so every call returns the same frozen instance.
+]=]
+function Vet.udim2(): UDim2Schema
+    return UDIM2
+end
 --[=[
 	@within Vet
 	@tag Constructor
