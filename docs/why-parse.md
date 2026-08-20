@@ -13,9 +13,11 @@ another library: `parse` throws when validation fails, so why not call it
 Because it hands something back, and that something is not always what you gave
 it.
 
-An assertion is a guard. You call it for its side effect, and if it returns at
-all you carry on with the value you already had. That is what `assert` means in
-Lua, and naming a method `assert` promises the same:
+An assertion is a guard. Lua's `assert` does hand a value back — `local file =
+assert(io.open(path))` is the idiom — but what it hands back is the argument it
+was given, unchanged. That identity is the promise in the name: if it returned
+at all, the value you already had was fine. Naming a method `assert` makes the
+same promise:
 
 ```lua
 Settings:assert(raw)
