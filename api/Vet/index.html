@@ -22,8 +22,8 @@ local Name = v.string():min(3):max(22)
 Name:parse(&quot;kyle&quot;) --&gt; &quot;kyle&quot;
 Name:parse(&quot;ky&quot;)   --&gt; errors
 ```"><link data-rh="true" rel="canonical" href="https://imkylecat.github.io/vet/api/Vet"><link data-rh="true" rel="alternate" href="https://imkylecat.github.io/vet/api/Vet" hreflang="en"><link data-rh="true" rel="alternate" href="https://imkylecat.github.io/vet/api/Vet" hreflang="x-default"><link rel="stylesheet" href="/vet/assets/css/styles.5ec48d9a.css">
-<script src="/vet/assets/js/runtime~main.c633afb3.js" defer="defer"></script>
-<script src="/vet/assets/js/main.1cfc649f.js" defer="defer"></script>
+<script src="/vet/assets/js/runtime~main.7c26f673.js" defer="defer"></script>
+<script src="/vet/assets/js/main.acf93d54.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -76,20 +76,20 @@ type Nickname <span class="token operator">=</span> v<span class="token punctuat
   The property walk duplicates the one in <a href="/vet/api/Vet#infer">Vet.infer</a> because a type function
   cannot call another type function.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="UuidVersion"><code style="text-decoration:none">UuidVersion</code><a href="#UuidVersion" class="hash-link" aria-label="Direct link to UuidVersion" title="Direct link to UuidVersion" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1287"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">type</code> <code>UuidVersion<!-- --> = </code> <code class="blue_P4bS">&quot;v4&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v5&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v6&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v7&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v8&quot;</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="UuidVersion"><code style="text-decoration:none">UuidVersion</code><a href="#UuidVersion" class="hash-link" aria-label="Direct link to UuidVersion" title="Direct link to UuidVersion" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1314"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">type</code> <code>UuidVersion<!-- --> = </code> <code class="blue_P4bS">&quot;v4&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v5&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v6&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v7&quot;</code><code class="op_lSLc"> | </code><code class="blue_P4bS">&quot;v8&quot;</code></div><div>
 <p>
   Versions accepted by <a href="/vet/api/Vet#uuid">Vet.uuid</a> and <a href="/vet/api/Vet#guid">Vet.guid</a>. Version 4 is random, 5 is
   name-based, 6 is reordered time, 7 is Unix epoch time, and 8 is custom.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="UuidOptions"><code style="text-decoration:none">UuidOptions</code><a href="#UuidOptions" class="hash-link" aria-label="Direct link to UuidOptions" title="Direct link to UuidOptions" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1294"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>UuidOptions<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>version<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidVersion">UuidVersion?</a></code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="UuidOptions"><code style="text-decoration:none">UuidOptions</code><a href="#UuidOptions" class="hash-link" aria-label="Direct link to UuidOptions" title="Direct link to UuidOptions" translate="no">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1321"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">interface</code> <code>UuidOptions<!-- --> <!-- -->{</code><div class="inset_uKQm"><div><code>version<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidVersion">UuidVersion?</a></code><span class="inlineDescription_G7Er">-- <span>
 <p>Version the identifier must declare</p>
-</span></span></div></div><code>}</code></div><div></div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="string"><code style="text-decoration:none">string</code><a href="#string" class="hash-link" aria-label="Direct link to string" title="Direct link to string" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1388"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">string</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/StringSchema">StringSchema</a></code></div><div>
+</span></span></div></div><code>}</code></div><div></div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="string"><code style="text-decoration:none">string</code><a href="#string" class="hash-link" aria-label="Direct link to string" title="Direct link to string" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1415"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">string</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/StringSchema">StringSchema</a></code></div><div>
 <p>Creates a schema that accepts any string.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="number"><code style="text-decoration:none">number</code><a href="#number" class="hash-link" aria-label="Direct link to number" title="Direct link to number" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1399"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">number</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/NumberSchema">NumberSchema</a></code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="number"><code style="text-decoration:none">number</code><a href="#number" class="hash-link" aria-label="Direct link to number" title="Direct link to number" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1426"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">number</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/NumberSchema">NumberSchema</a></code></div><div>
 <p>Creates a schema that accepts any number except NaN.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="boolean"><code style="text-decoration:none">boolean</code><a href="#boolean" class="hash-link" aria-label="Direct link to boolean" title="Direct link to boolean" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1410"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">boolean</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/BooleanSchema">BooleanSchema</a></code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="boolean"><code style="text-decoration:none">boolean</code><a href="#boolean" class="hash-link" aria-label="Direct link to boolean" title="Direct link to boolean" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1437"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">boolean</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/BooleanSchema">BooleanSchema</a></code></div><div>
 <p>Creates a schema that accepts <code>true</code> or <code>false</code>.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="uuid"><code style="text-decoration:none">uuid</code><a href="#uuid" class="hash-link" aria-label="Direct link to uuid" title="Direct link to uuid" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1439"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">uuid</code><code>(</code><div class="inset_uKQm"><div><code>options<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidOptions">UuidOptions?</a></code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="uuid"><code style="text-decoration:none">uuid</code><a href="#uuid" class="hash-link" aria-label="Direct link to uuid" title="Direct link to uuid" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1466"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">uuid</code><code>(</code><div class="inset_uKQm"><div><code>options<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidOptions">UuidOptions?</a></code><span class="inlineDescription_G7Er">-- <span>
 <p>Pass <code>{ version = "v4" }</code> to pin the version</p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/StringSchema">StringSchema</a></code></div><div>
 <p>
@@ -111,7 +111,7 @@ SessionId<span class="token punctuation">:</span><span class="token function">pa
   The result is a plain <a href="/vet/api/StringSchema">StringSchema</a>, so <code>:optional()</code>, <code>:default()</code> and
   <code>Vet.infer</code> behave exactly as they do for any other string.
 </p>
-</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;unknown uuid version ...&quot;</td><td>Thrown when `options.version` is not v4 to v8</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="guid"><code style="text-decoration:none">guid</code><a href="#guid" class="hash-link" aria-label="Direct link to guid" title="Direct link to guid" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1464"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">guid</code><code>(</code><div class="inset_uKQm"><div><code>options<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidOptions">UuidOptions?</a></code><span class="inlineDescription_G7Er">-- <span>
+</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;unknown uuid version ...&quot;</td><td>Thrown when `options.version` is not v4 to v8</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="guid"><code style="text-decoration:none">guid</code><a href="#guid" class="hash-link" aria-label="Direct link to guid" title="Direct link to guid" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1491"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">guid</code><code>(</code><div class="inset_uKQm"><div><code>options<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/Vet#UuidOptions">UuidOptions?</a></code><span class="inlineDescription_G7Er">-- <span>
 <p>Pass <code>{ version = "v4" }</code> to pin the version</p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/StringSchema">StringSchema</a></code></div><div>
 <p>
@@ -128,7 +128,7 @@ Id<span class="token punctuation">:</span><span class="token function">parse</sp
   uppercase by default. Values Microsoft produced do not always follow the
   RFC variant rule, so only the layout is enforced unless you pass a version.
 </p>
-</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;unknown guid version ...&quot;</td><td>Thrown when `options.version` is not v4 to v8</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="array"><code style="text-decoration:none">array</code><a href="#array" class="hash-link" aria-label="Direct link to array" title="Direct link to array" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1483"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">array</code><code>(</code><div class="inset_uKQm"><div><code>item<!-- -->: </code><code class="blue_P4bS">S</code><span class="inlineDescription_G7Er">-- <span>
+</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;unknown guid version ...&quot;</td><td>Thrown when `options.version` is not v4 to v8</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="array"><code style="text-decoration:none">array</code><a href="#array" class="hash-link" aria-label="Direct link to array" title="Direct link to array" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1510"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">array</code><code>(</code><div class="inset_uKQm"><div><code>item<!-- -->: </code><code class="blue_P4bS">S</code><span class="inlineDescription_G7Er">-- <span>
 <p>Schema every element must satisfy</p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/ArraySchema">ArraySchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">Vet.infer</code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">S</code><code class="op_lSLc">&gt;</code><code class="op_lSLc">&gt;</code></div><div>
 <p>Creates a schema that accepts an array of <code>item</code>.</p>
@@ -137,7 +137,7 @@ Id<span class="token punctuation">:</span><span class="token function">parse</sp
 Scores<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span> <span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token comment">--> { 1, 2, 3 }</span>
 Scores<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1.5</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>  <span class="token comment">--> errors: [2]: expected an integer, got 1.5</span>
 </code></pre>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="tuple"><code style="text-decoration:none">tuple</code><a href="#tuple" class="hash-link" aria-label="Direct link to tuple" title="Direct link to tuple" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1512"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">tuple</code><code>(</code><div class="inset_uKQm"><div><code>positions<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS">S</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="tuple"><code style="text-decoration:none">tuple</code><a href="#tuple" class="hash-link" aria-label="Direct link to tuple" title="Direct link to tuple" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1539"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">tuple</code><code>(</code><div class="inset_uKQm"><div><code>positions<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS">S</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
 <p>One schema per position, in order</p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/TupleSchema">TupleSchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">Vet.infer</code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">S</code><code class="op_lSLc">&gt;</code><code class="op_lSLc">&gt;</code></div><div>
 <p>
@@ -155,9 +155,9 @@ Waypoint<span class="token punctuation">:</span><span class="token function">par
   result is therefore <code>{ string | number }</code> rather than a true positional
   type — the runtime check is exact, the static type is not.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="object"><code style="text-decoration:none">object</code><a href="#object" class="hash-link" aria-label="Direct link to object" title="Direct link to object" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1534"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">object</code><code>(</code><div class="inset_uKQm"><div><code>shape<!-- -->: </code><code class="blue_P4bS">S</code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="object"><code style="text-decoration:none">object</code><a href="#object" class="hash-link" aria-label="Direct link to object" title="Direct link to object" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Constructor</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1561"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Vet<!-- -->.</code><code class="green_DgR4">object</code><code>(</code><div class="inset_uKQm"><div><code>shape<!-- -->: </code><code class="blue_P4bS">S</code><span class="inlineDescription_G7Er">-- <span>
 <p>Table mapping field names to schemas</p>
-</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/ObjectSchema">ObjectSchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">Vet.objectOutput</code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">S</code><code class="op_lSLc">&gt;</code><code class="op_lSLc">&gt;</code></div><div>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/ObjectSchema">ObjectSchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">Vet.objectOutput</code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">S</code><code class="op_lSLc">&gt;</code><code class="blue_P4bS">,</code><code class="blue_P4bS">S</code><code class="op_lSLc">&gt;</code></div><div>
 <p>
   Creates a schema that validates a table field by field. The field types come
   from the shape, so the schema is the only place they are declared.
@@ -186,7 +186,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 &quot;Constructor&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1388,
+                &quot;line&quot;: 1415,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -205,7 +205,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 &quot;Constructor&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1399,
+                &quot;line&quot;: 1426,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -224,7 +224,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 &quot;Constructor&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1410,
+                &quot;line&quot;: 1437,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -255,7 +255,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 }
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1439,
+                &quot;line&quot;: 1466,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -286,7 +286,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 }
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1464,
+                &quot;line&quot;: 1491,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -311,7 +311,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 &quot;Constructor&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1483,
+                &quot;line&quot;: 1510,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -336,7 +336,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 &quot;Constructor&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1512,
+                &quot;line&quot;: 1539,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -353,7 +353,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
             &quot;returns&quot;: [
                 {
                     &quot;desc&quot;: &quot;&quot;,
-                    &quot;lua_type&quot;: &quot;ObjectSchema&lt;Vet.objectOutput&lt;S&gt;&gt;&quot;
+                    &quot;lua_type&quot;: &quot;ObjectSchema&lt;Vet.objectOutput&lt;S&gt;, S&gt;&quot;
                 }
             ],
             &quot;function_type&quot;: &quot;static&quot;,
@@ -361,7 +361,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 &quot;Constructor&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1534,
+                &quot;line&quot;: 1561,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         }
@@ -420,7 +420,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
             &quot;desc&quot;: &quot;Versions accepted by [Vet.uuid] and [Vet.guid]. Version 4 is random, 5 is\nname-based, 6 is reordered time, 7 is Unix epoch time, and 8 is custom.&quot;,
             &quot;lua_type&quot;: &quot;\&quot;v4\&quot; | \&quot;v5\&quot; | \&quot;v6\&quot; | \&quot;v7\&quot; | \&quot;v8\&quot;&quot;,
             &quot;source&quot;: {
-                &quot;line&quot;: 1287,
+                &quot;line&quot;: 1314,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -435,7 +435,7 @@ type User <span class="token operator">=</span> v<span class="token punctuation"
                 }
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1294,
+                &quot;line&quot;: 1321,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         }
