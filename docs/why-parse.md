@@ -13,11 +13,9 @@ another library: `parse` throws when validation fails, so why not call it
 Because it hands something back, and that something is not always what you gave
 it.
 
-An assertion is a guard. Lua's `assert` does hand a value back — `local file =
-assert(io.open(path))` is the idiom — but what it hands back is the argument it
-was given, unchanged. That identity is the promise in the name: if it returned
-at all, the value you already had was fine. Naming a method `assert` makes the
-same promise:
+An assertion is a guard. What comes back out of `assert` is what went into it,
+unchanged, so if it returned at all the value you already had was fine. That is
+the promise in the name, and naming a method `assert` makes the same one:
 
 ```lua
 Settings:assert(raw)
@@ -56,6 +54,47 @@ Settings:parse(complete) == complete --> true
 ```
 
 :::
+
+## But `assert` returns the value
+
+It does, and that is the argument for `parse` rather than against it.
+
+`assert(v, message)` hands back everything it was given whenever `v` is truthy.
+`local part = assert(workspace:FindFirstChild("Baseplate"))` is the idiom that
+rests on it, and Luau passes every argument through, not just the first:
+
+```lua
+select("#", assert(1, "message", 3)) --> 3
+```
+
+What it hands back is the same value, though — not a new one built from it:
+
+```lua
+local raw = { Volume = 0.2 }
+
+assert(raw) == raw --> true
+```
+
+That is the whole difference. `assert` is a passthrough, so its result is spare:
+you can drop it, keep using the variable you already had, and lose nothing. It
+is why `assert(cond, "...")` on a line of its own is ordinary code rather than a
+mistake.
+
+`parse` has no such guarantee. Drop its result and the defaults go with it:
+
+```lua
+local settings = Settings:parse(raw) -- Muted filled in
+Settings:parse(raw)                  -- Muted still missing from raw
+```
+
+Both lines are valid Luau and nothing will warn you about the second. It is a
+deliberate check when you meant it as one, and a silently incomplete value when
+you did not — and the name is what tells a reader which to assume. `assert`
+says the result is spare. `parse` says the result is the point.
+
+So the objection is right about the return and wrong about what follows from it.
+`assert` may return a value; what it may not do is return a *different* one. A
+method that does needs a name that says so.
 
 ## It still asserts
 
