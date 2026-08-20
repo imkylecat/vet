@@ -87,7 +87,7 @@ local plain = { name = "kyle" }
 assert(Vet.object({ name = Vet.string() }):parse(plain) == plain)
 
 -- A constant table default is shared between parses, so build tables per parse.
-local Tags = Vet.array(Vet.string()):default(function()
+local Tags = Vet.array(Vet.string()):defaultWith(function()
     return {}
 end)
 
@@ -99,14 +99,9 @@ assert(#Tags:parse(nil) == 0)
 assert(Settings.shape.volume:parse(0.25) == 0.25)
 assert(not Settings.shape.volume:safeParse(2).success)
 assert(Settings.shape.volume:parse(nil) == 0.5)
-assert(table.isfrozen(Settings.shape))
-assert(not pcall(function()
-    Settings.shape.volume = Vet.string()
-end))
 
--- The field schemas stay reachable, so one field can be checked on its own.
-assert(Settings.shape.volume:parse(nil) == 0.5)
-assert(not Settings.shape.volume:safeParse(2).success)
+-- The shape is frozen, so writing to it fails at runtime. The cast is needed
+-- because the assignment is deliberately the wrong type as well.
 assert(table.isfrozen(Settings.shape))
 assert(not pcall(function()
     (Settings.shape :: any).volume = Vet.string()
