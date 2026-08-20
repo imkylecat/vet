@@ -1082,6 +1082,105 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
     return (self :: any) :: ObjectSchema<T>
 end
 
+--[=[
+	@type UuidVersion "v4" | "v5" | "v6" | "v7" | "v8"
+	@within Vet
+
+	Versions accepted by [Vet.uuid] and [Vet.guid]. Version 4 is random, 5 is
+	name-based, 6 is reordered time, 7 is Unix epoch time, and 8 is custom.
+]=]
+export type UuidVersion = "v4" | "v5" | "v6" | "v7" | "v8"
+
+--[=[
+	@interface UuidOptions
+	@within Vet
+	.version UuidVersion? -- Version the identifier must declare
+]=]
+export type UuidOptions = {
+    version: UuidVersion?,
+}
+
+-- 8-4-4-4-12 hexadecimal, the layout shared by UUIDs and GUIDs.
+local UUID_PATTERN =
+    `^{string.rep("%x", 8)}%-{string.rep("%x", 4)}%-{string.rep("%x", 4)}%-{string.rep("%x", 4)}%-{string.rep("%x", 12)}$`
+
+local VERSION_NIBBLES: { [string]: string } = {
+    v4 = "4",
+    v5 = "5",
+    v6 = "6",
+    v7 = "7",
+    v8 = "8",
+}
+
+-- RFC 9562 spells the variant as the two high bits of nibble 17 being `10`,
+-- which is these four hexadecimal digits.
+local VARIANT_NIBBLES: { [string]: boolean } = {
+    ["8"] = true,
+    ["9"] = true,
+    a = true,
+    b = true,
+}
+
+local function summarise(value: string): string
+    if #value > 45 then
+        return `"{string.sub(value, 1, 42)}..."`
+    end
+
+    return `"{value}"`
+end
+
+local function versionNibble(options: UuidOptions?, label: string): string?
+    if options == nil or options.version == nil then
+        return nil
+    end
+
+    local nibble = VERSION_NIBBLES[options.version]
+
+    if nibble == nil then
+        error(`unknown {label} version "{tostring(options.version)}", expected v4, v5, v6, v7 or v8`, 3)
+    end
+
+    return nibble
+end
+
+local function identifierCheck(expected: string?, allowBraces: boolean, strict: boolean, label: string): Check<string>
+    return function(value)
+        local candidate = value
+
+        if allowBraces then
+            local unwrapped = string.match(value, "^{(.*)}$")
+
+            if unwrapped ~= nil then
+                candidate = unwrapped
+            end
+        end
+
+        if string.match(candidate, UUID_PATTERN) == nil then
+            return `expected a {label}, got {summarise(value)}`
+        end
+
+        local version = string.lower(string.sub(candidate, 15, 15))
+
+        if expected ~= nil then
+            if version ~= expected then
+                return `expected a v{expected} {label}, got v{version}`
+            end
+        elseif strict and string.match(version, "^[1-8]$") == nil then
+            return `expected a {label} with a version of 1 to 8, got v{version}`
+        end
+
+        if strict then
+            local variant = string.lower(string.sub(candidate, 20, 20))
+
+            if not VARIANT_NIBBLES[variant] then
+                return `expected a {label} with an RFC 9562 variant, got nibble {variant}`
+            end
+        end
+
+        return nil
+    end
+end
+
 local Vet = {}
 
 --[=[
@@ -1112,6 +1211,58 @@ end
 ]=]
 function Vet.boolean(): BooleanSchema
     return newBoolean({})
+end
+
+--[=[
+	@within Vet
+	@param options UuidOptions? -- Pass `{ version = "v4" }` to pin the version
+	@return StringSchema
+	@error "unknown uuid version ..." -- Thrown when `options.version` is not v4 to v8
+
+	Creates a schema that accepts a UUID: 8-4-4-4-12 hexadecimal digits, in
+	either case, carrying a version of 1 to 8 and an RFC 9562 variant.
+
+	```lua
+	local Id = Vet.uuid()
+	local SessionId = Vet.uuid({ version = "v7" })
+
+	Id:parse("01912d68-783e-7cc0-a2f0-5f8b1d3e9a7c") --> ok
+	SessionId:parse("6f9619ff-8b86-4d11-b42d-00cf4fc964ff")
+	--> errors: expected a v7 uuid, got v4
+	```
+
+	Because the version and variant are checked, the nil UUID and the max UUID
+	are both rejected. Use [Vet.guid] when you only care about the layout.
+
+	The result is a plain [StringSchema], so `:optional()`, `:default()` and
+	`Vet.infer` behave exactly as they do for any other string.
+]=]
+function Vet.uuid(options: UuidOptions?): StringSchema
+    return newString({ identifierCheck(versionNibble(options, "uuid"), false, true, "uuid") })
+end
+
+--[=[
+	@within Vet
+	@param options UuidOptions? -- Pass `{ version = "v4" }` to pin the version
+	@return StringSchema
+	@error "unknown guid version ..." -- Thrown when `options.version` is not v4 to v8
+
+	Creates a schema that accepts a GUID: the same 8-4-4-4-12 layout as
+	[Vet.uuid], optionally wrapped in braces, with no variant requirement.
+
+	```lua
+	local Id = Vet.guid()
+
+	Id:parse("{6F9619FF-8B86-D011-B42D-00CF4FC964FF}") --> ok
+	Id:parse("6f9619ff-8b86-d011-b42d-00cf4fc964ff")   --> ok
+	```
+
+	This is the shape `HttpService:GenerateGUID` returns, which is braced and
+	uppercase by default. Values Microsoft produced do not always follow the
+	RFC variant rule, so only the layout is enforced unless you pass a version.
+]=]
+function Vet.guid(options: UuidOptions?): StringSchema
+    return newString({ identifierCheck(versionNibble(options, "guid"), true, false, "guid") })
 end
 
 --[=[

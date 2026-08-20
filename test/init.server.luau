@@ -1,5 +1,6 @@
 --!strict
 
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Vet = require(ReplicatedStorage.Vet)
@@ -93,6 +94,25 @@ end)
 local firstTags = Tags:parse(nil)
 table.insert(firstTags, "hi")
 assert(#Tags:parse(nil) == 0)
+
+local SessionId = Vet.uuid({ version = "v7" })
+
+assert(SessionId:parse("01912d68-783e-7cc0-a2f0-5f8b1d3e9a7c") ~= nil)
+assert(not SessionId:safeParse("6f9619ff-8b86-4d11-b42d-00cf4fc964ff").success)
+assert(Vet.uuid():safeParse("6f9619ff-8b86-4d11-b42d-00cf4fc964ff").success)
+assert(Vet.uuid():safeParse("6F9619FF-8B86-4D11-B42D-00CF4FC964FF").success)
+
+-- Version and variant are both enforced, so these sentinels are not UUIDs.
+assert(not Vet.uuid():safeParse("00000000-0000-0000-0000-000000000000").success)
+assert(not Vet.uuid():safeParse("6f9619ff-8b86-4d11-c42d-00cf4fc964ff").success)
+
+-- GUIDs are layout only, and HttpService hands them over braced and uppercase.
+local Guid = Vet.guid()
+
+assert(Guid:safeParse(HttpService:GenerateGUID(true)).success)
+assert(Guid:safeParse(HttpService:GenerateGUID(false)).success)
+assert(Guid:safeParse("{6F9619FF-8B86-D011-B42D-00CF4FC964FF}").success)
+assert(not Guid:safeParse("not-a-guid").success)
 
 -- infer<S> resolves to the type a schema parses to. It runs during analysis, so
 -- these annotations are the test: they only type-check if infer got it right.
