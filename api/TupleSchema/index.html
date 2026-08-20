@@ -7,6 +7,9 @@
 for packed argument lists and other positional payloads, where [ArraySchema]
 would only let you say that every element is the same shape.
 
+Like [ArraySchema], the input is returned untouched unless a position fills
+a value in, in which case it is shallow copied first.
+
 ```lua
 local Waypoint = v.tuple({ v.string(), v.number():integer() })
 
@@ -26,6 +29,9 @@ Ping:parse({ &quot;hello&quot; }) --&gt; { &quot;hello&quot;, 0 }
 for packed argument lists and other positional payloads, where [ArraySchema]
 would only let you say that every element is the same shape.
 
+Like [ArraySchema], the input is returned untouched unless a position fills
+a value in, in which case it is shallow copied first.
+
 ```lua
 local Waypoint = v.tuple({ v.string(), v.number():integer() })
 
@@ -42,8 +48,8 @@ local Ping = v.tuple({ v.string(), v.number():default(0) })
 
 Ping:parse({ &quot;hello&quot; }) --&gt; { &quot;hello&quot;, 0 }
 ```"><link data-rh="true" rel="canonical" href="https://imkylecat.github.io/vet/api/TupleSchema"><link data-rh="true" rel="alternate" href="https://imkylecat.github.io/vet/api/TupleSchema" hreflang="en"><link data-rh="true" rel="alternate" href="https://imkylecat.github.io/vet/api/TupleSchema" hreflang="x-default"><link rel="stylesheet" href="/vet/assets/css/styles.5ec48d9a.css">
-<script src="/vet/assets/js/runtime~main.7cb90402.js" defer="defer"></script>
-<script src="/vet/assets/js/main.881fb700.js" defer="defer"></script>
+<script src="/vet/assets/js/runtime~main.bc113ff6.js" defer="defer"></script>
+<script src="/vet/assets/js/main.0778d510.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -54,6 +60,10 @@ Ping:parse({ &quot;hello&quot; }) --&gt; { &quot;hello&quot;, 0 }
   Validates a fixed sequence where each position has its own schema. Use it
   for packed argument lists and other positional payloads, where <a href="/vet/api/ArraySchema">ArraySchema</a>
   would only let you say that every element is the same shape.
+</p>
+<p>
+  Like <a href="/vet/api/ArraySchema">ArraySchema</a>, the input is returned untouched unless a position fills
+  a value in, in which case it is shallow copied first.
 </p>
 <pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> Waypoint <span class="token operator">=</span> v<span class="token punctuation">.</span><span class="token function">tuple</span><span class="token punctuation">(</span><span class="token punctuation">{</span> v<span class="token punctuation">.</span><span class="token function">string</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> v<span class="token punctuation">.</span><span class="token function">number</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span><span class="token function">integer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><span class="token punctuation">)</span>
 
@@ -69,25 +79,25 @@ Waypoint<span class="token punctuation">:</span><span class="token function">par
 
 Ping<span class="token punctuation">:</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token string">"hello"</span> <span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token comment">--> { "hello", 0 }</span>
 </code></pre>
-</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="properties">Properties<a href="#properties" class="hash-link" aria-label="Direct link to Properties" title="Direct link to Properties" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="minimum"><code style="text-decoration:none">minimum</code><a href="#minimum" class="hash-link" aria-label="Direct link to minimum" title="Direct link to minimum" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1391"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->.<!-- -->minimum<!-- -->:<!-- --> </code> <code class="blue_P4bS">number?</code></div><div>
+</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="properties">Properties<a href="#properties" class="hash-link" aria-label="Direct link to Properties" title="Direct link to Properties" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="minimum"><code style="text-decoration:none">minimum</code><a href="#minimum" class="hash-link" aria-label="Direct link to minimum" title="Direct link to minimum" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1517"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->.<!-- -->minimum<!-- -->:<!-- --> </code> <code class="blue_P4bS">number?</code></div><div>
 <p>
   Always <code>nil</code>. How few values a tuple accepts depends on how many of its
   trailing positions tolerate <code>nil</code>, so there is no single number.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="maximum"><code style="text-decoration:none">maximum</code><a href="#maximum" class="hash-link" aria-label="Direct link to maximum" title="Direct link to maximum" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1401"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->.<!-- -->maximum<!-- -->:<!-- --> </code> <code class="blue_P4bS">number?</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="maximum"><code style="text-decoration:none">maximum</code><a href="#maximum" class="hash-link" aria-label="Direct link to maximum" title="Direct link to maximum" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1527"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->.<!-- -->maximum<!-- -->:<!-- --> </code> <code class="blue_P4bS">number?</code></div><div>
 <p>The number of positions, which is the most values this schema accepts.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="isOptional"><code style="text-decoration:none">isOptional</code><a href="#isOptional" class="hash-link" aria-label="Direct link to isOptional" title="Direct link to isOptional" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1411"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->.<!-- -->isOptional<!-- -->:<!-- --> </code> <code class="blue_P4bS">boolean</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="isOptional"><code style="text-decoration:none">isOptional</code><a href="#isOptional" class="hash-link" aria-label="Direct link to isOptional" title="Direct link to isOptional" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1537"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->.<!-- -->isOptional<!-- -->:<!-- --> </code> <code class="blue_P4bS">boolean</code></div><div>
 <p>Always <code>false</code>.</p>
-</div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="safeParse"><code style="text-decoration:none">safeParse</code><a href="#safeParse" class="hash-link" aria-label="Direct link to safeParse" title="Direct link to safeParse" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#00a1e4;color:#00a1e4">Parsing</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1423"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">safeParse</code><code>(</code><code>value<!-- -->: </code><code class="blue_P4bS">unknown</code><code>) → </code><code class="blue_P4bS">Result</code><code class="op_lSLc">&lt;</code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><code class="op_lSLc">&gt;</code></div><div>
+</div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="safeParse"><code style="text-decoration:none">safeParse</code><a href="#safeParse" class="hash-link" aria-label="Direct link to safeParse" title="Direct link to safeParse" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#00a1e4;color:#00a1e4">Parsing</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1549"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">safeParse</code><code>(</code><code>value<!-- -->: </code><code class="blue_P4bS">unknown</code><code>) → </code><code class="blue_P4bS">Result</code><code class="op_lSLc">&lt;</code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><code class="op_lSLc">&gt;</code></div><div>
 <p>
   Validates each position against its own schema, reporting failures with
   the index in the issue path.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="parse"><code style="text-decoration:none">parse</code><a href="#parse" class="hash-link" aria-label="Direct link to parse" title="Direct link to parse" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#00a1e4;color:#00a1e4">Parsing</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1478"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">parse</code><code>(</code><code>value<!-- -->: </code><code class="blue_P4bS">unknown</code><code>) → </code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="parse"><code style="text-decoration:none">parse</code><a href="#parse" class="hash-link" aria-label="Direct link to parse" title="Direct link to parse" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#00a1e4;color:#00a1e4">Parsing</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1623"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">parse</code><code>(</code><code>value<!-- -->: </code><code class="blue_P4bS">unknown</code><code>) → </code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code></div><div>
 <p>Validates <code>value</code> and returns it, throwing on failure.</p>
-</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;expected ...&quot;</td><td>Thrown when `value` fails validation</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="optional"><code style="text-decoration:none">optional</code><a href="#optional" class="hash-link" aria-label="Direct link to optional" title="Direct link to optional" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1495"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">optional</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/OptionalSchema">OptionalSchema</a></code><code class="op_lSLc">&lt;</code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><code class="op_lSLc">&gt;</code></div><div>
+</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;expected ...&quot;</td><td>Thrown when `value` fails validation</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="optional"><code style="text-decoration:none">optional</code><a href="#optional" class="hash-link" aria-label="Direct link to optional" title="Direct link to optional" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1651"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">optional</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/OptionalSchema">OptionalSchema</a></code><code class="op_lSLc">&lt;</code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><code class="op_lSLc">&gt;</code></div><div>
 <p>Wraps this schema so that <code>nil</code> is also accepted.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="default"><code style="text-decoration:none">default</code><a href="#default" class="hash-link" aria-label="Direct link to default" title="Direct link to default" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1512"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">default</code><code>(</code><div class="inset_uKQm"><div><code>fallback<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="default"><code style="text-decoration:none">default</code><a href="#default" class="hash-link" aria-label="Direct link to default" title="Direct link to default" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1668"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">default</code><code>(</code><div class="inset_uKQm"><div><code>fallback<!-- -->: </code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
 <p>Value used when parsing <code>nil</code></p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/DefaultSchema">DefaultSchema</a></code><code class="op_lSLc">&lt;</code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><code class="op_lSLc">&gt;</code></div><div>
 <p>
@@ -95,7 +105,7 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
   Prefer passing a function, since a constant table would be shared by
   every parse.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="defaultWith"><code style="text-decoration:none">defaultWith</code><a href="#defaultWith" class="hash-link" aria-label="Direct link to defaultWith" title="Direct link to defaultWith" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1533"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">defaultWith</code><code>(</code><div class="inset_uKQm"><div><code>produce<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="defaultWith"><code style="text-decoration:none">defaultWith</code><a href="#defaultWith" class="hash-link" aria-label="Direct link to defaultWith" title="Direct link to defaultWith" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L1689"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>TupleSchema<!-- -->:</code><code class="green_DgR4">defaultWith</code><code>(</code><div class="inset_uKQm"><div><code>produce<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><span class="inlineDescription_G7Er">-- <span>
 <p>Builds the value used when parsing <code>nil</code></p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/DefaultSchema">DefaultSchema</a></code><code class="op_lSLc">&lt;</code><code class="purple_ieR2">{</code><code class="blue_P4bS">T</code><code class="purple_ieR2">}</code><code class="op_lSLc">&gt;</code></div><div>
 <p>
@@ -127,7 +137,7 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
                 &quot;Parsing&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1423,
+                &quot;line&quot;: 1549,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -158,7 +168,7 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
                 }
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1478,
+                &quot;line&quot;: 1623,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -177,7 +187,7 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
                 &quot;Wrapper&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1495,
+                &quot;line&quot;: 1651,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -202,7 +212,7 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
                 &quot;Wrapper&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1512,
+                &quot;line&quot;: 1668,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -227,7 +237,7 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
                 &quot;Wrapper&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 1533,
+                &quot;line&quot;: 1689,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         }
@@ -242,7 +252,7 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
             ],
             &quot;readonly&quot;: true,
             &quot;source&quot;: {
-                &quot;line&quot;: 1391,
+                &quot;line&quot;: 1517,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -255,7 +265,7 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
             ],
             &quot;readonly&quot;: true,
             &quot;source&quot;: {
-                &quot;line&quot;: 1401,
+                &quot;line&quot;: 1527,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -268,16 +278,16 @@ Ping<span class="token punctuation">:</span><span class="token function">parse</
             ],
             &quot;readonly&quot;: true,
             &quot;source&quot;: {
-                &quot;line&quot;: 1411,
+                &quot;line&quot;: 1537,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         }
     ],
     &quot;types&quot;: [],
     &quot;name&quot;: &quot;TupleSchema&quot;,
-    &quot;desc&quot;: &quot;Validates a fixed sequence where each position has its own schema. Use it\nfor packed argument lists and other positional payloads, where [ArraySchema]\nwould only let you say that every element is the same shape.\n\n```lua\nlocal Waypoint = v.tuple({ v.string(), v.number():integer() })\n\nWaypoint:parse({ \&quot;spawn\&quot;, 3 }) --&gt; { \&quot;spawn\&quot;, 3 }\nWaypoint:parse({ \&quot;spawn\&quot; })    --&gt; errors: [2]: expected number, got nil\nWaypoint:parse({ \&quot;a\&quot;, 1, 2 })  --&gt; errors: expected a tuple of 2 values, got 3\n```\n\nA position whose schema is optional or has a default may be left off the\nend, since Lua cannot tell a trailing `nil` from a shorter list:\n\n```lua\nlocal Ping = v.tuple({ v.string(), v.number():default(0) })\n\nPing:parse({ \&quot;hello\&quot; }) --&gt; { \&quot;hello\&quot;, 0 }\n```&quot;,
+    &quot;desc&quot;: &quot;Validates a fixed sequence where each position has its own schema. Use it\nfor packed argument lists and other positional payloads, where [ArraySchema]\nwould only let you say that every element is the same shape.\n\nLike [ArraySchema], the input is returned untouched unless a position fills\na value in, in which case it is shallow copied first.\n\n```lua\nlocal Waypoint = v.tuple({ v.string(), v.number():integer() })\n\nWaypoint:parse({ \&quot;spawn\&quot;, 3 }) --&gt; { \&quot;spawn\&quot;, 3 }\nWaypoint:parse({ \&quot;spawn\&quot; })    --&gt; errors: [2]: expected number, got nil\nWaypoint:parse({ \&quot;a\&quot;, 1, 2 })  --&gt; errors: expected a tuple of 2 values, got 3\n```\n\nA position whose schema is optional or has a default may be left off the\nend, since Lua cannot tell a trailing `nil` from a shorter list:\n\n```lua\nlocal Ping = v.tuple({ v.string(), v.number():default(0) })\n\nPing:parse({ \&quot;hello\&quot; }) --&gt; { \&quot;hello\&quot;, 0 }\n```&quot;,
     &quot;source&quot;: {
-        &quot;line&quot;: 1365,
+        &quot;line&quot;: 1490,
         &quot;path&quot;: &quot;src/init.luau&quot;
     }
 }</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a><ul><li><a href="#Reflection" class="table-of-contents__link toc-highlight">Reflection</a><ul><li><a href="#isOptional" class="table-of-contents__link toc-highlight">isOptional</a></li><li><a href="#maximum" class="table-of-contents__link toc-highlight">maximum</a></li><li><a href="#minimum" class="table-of-contents__link toc-highlight">minimum</a></li></ul></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Parsing" class="table-of-contents__link toc-highlight">Parsing</a><ul><li><a href="#parse" class="table-of-contents__link toc-highlight">:parse</a></li><li><a href="#safeParse" class="table-of-contents__link toc-highlight">:safeParse</a></li></ul></li><li><a href="#Wrapper" class="table-of-contents__link toc-highlight">Wrapper</a><ul><li><a href="#default" class="table-of-contents__link toc-highlight">:default</a></li><li><a href="#defaultWith" class="table-of-contents__link toc-highlight">:defaultWith</a></li><li><a href="#optional" class="table-of-contents__link toc-highlight">:optional</a></li></ul></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 imkylecat. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
