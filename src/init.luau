@@ -261,13 +261,47 @@ end
 	```
 ]=]
 export type OptionalSchema<T> = {
+    minimum: number?,
+    maximum: number?,
+    isOptional: boolean,
     safeParse: (self: OptionalSchema<T>, value: unknown) -> Result<T?>,
     parse: (self: OptionalSchema<T>, value: unknown) -> T?,
     optional: (self: OptionalSchema<T>) -> OptionalSchema<T>,
 }
 
-local function newOptional<T>(inner: (value: unknown) -> Result<T>): OptionalSchema<T>
+local function newOptional<T>(inner: (value: unknown) -> Result<T>, minimum: number?, maximum: number?): OptionalSchema<T>
     local self = {}
+
+    --[=[
+		@within OptionalSchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Always `true`.
+	]=]
+    self.isOptional = true
+
+    --[=[
+		@within OptionalSchema
+		@prop minimum number?
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema, so `v.string():min(3):optional()`
+		still reports a minimum of 3.
+	]=]
+    self.minimum = minimum
+
+    --[=[
+		@within OptionalSchema
+		@prop maximum number?
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema.
+	]=]
+    self.maximum = maximum
 
     --[=[
 		@within OptionalSchema
@@ -351,12 +385,51 @@ end
 	```
 ]=]
 export type DefaultSchema<T> = {
+    minimum: number?,
+    maximum: number?,
+    isOptional: boolean,
     safeParse: (self: DefaultSchema<T>, value: unknown) -> Result<T>,
     parse: (self: DefaultSchema<T>, value: unknown) -> T,
 }
 
-local function newDefault<T>(inner: (value: unknown) -> Result<T>, fallback: T | () -> T): DefaultSchema<T>
+local function newDefault<T>(
+    inner: (value: unknown) -> Result<T>,
+    fallback: T | () -> T,
+    minimum: number?,
+    maximum: number?
+): DefaultSchema<T>
     local self = {}
+
+    --[=[
+		@within DefaultSchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Always `false`. A defaulted schema accepts a missing value but never
+		produces `nil`, so callers do not have to handle one.
+	]=]
+    self.isOptional = false
+
+    --[=[
+		@within DefaultSchema
+		@prop minimum number?
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema.
+	]=]
+    self.minimum = minimum
+
+    --[=[
+		@within DefaultSchema
+		@prop maximum number?
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema.
+	]=]
+    self.maximum = maximum
     local produce: (() -> T)? = nil
     local constant: T = nil :: any
 
@@ -440,13 +513,55 @@ type StringImpl = {
     default: (self: StringSchema, fallback: string | () -> string) -> DefaultSchema<string>,
 }
 
-export type StringSchema = typeof(setmetatable({} :: { _checks: { Check<string> } }, {} :: StringImpl))
+export type StringSchema = typeof(setmetatable(
+    {} :: {
+        _checks: { Check<string> },
+        minimum: number?,
+        maximum: number?,
+        isOptional: boolean,
+    },
+    {} :: StringImpl
+))
 
 local StringSchema = {} :: StringImpl
 StringSchema.__index = StringSchema
 
-local function newString(checks: { Check<string> }): StringSchema
-    return setmetatable({ _checks = checks }, StringSchema)
+--[=[
+	@within StringSchema
+	@prop minimum number?
+	@tag Reflection
+	@readonly
+
+	Shortest length this schema accepts, or `nil` if it is unbounded. Set by
+	[StringSchema:min] and [StringSchema:length].
+]=]
+
+--[=[
+	@within StringSchema
+	@prop maximum number?
+	@tag Reflection
+	@readonly
+
+	Longest length this schema accepts, or `nil` if it is unbounded. Set by
+	[StringSchema:max] and [StringSchema:length].
+]=]
+
+--[=[
+	@within StringSchema
+	@prop isOptional boolean
+	@tag Reflection
+	@readonly
+
+	Always `false`. Reading it on any schema tells you whether `nil` is
+	accepted without having to know which kind of schema you hold.
+]=]
+local function newString(checks: { Check<string> }, minimum: number?, maximum: number?): StringSchema
+    return setmetatable({
+        _checks = checks,
+        minimum = minimum,
+        maximum = maximum,
+        isOptional = false,
+    }, StringSchema)
 end
 
 --[=[
@@ -493,9 +608,13 @@ end
 	Requires the string to be at least `n` characters long.
 ]=]
 function StringSchema:min(n: number): StringSchema
-    return newString(append(self._checks, function(value)
-        return if #value < n then `expected at least {n} characters, got {#value}` else nil
-    end))
+    return newString(
+        append(self._checks, function(value)
+            return if #value < n then `expected at least {n} characters, got {#value}` else nil
+        end),
+        n,
+        self.maximum
+    )
 end
 
 --[=[
@@ -507,9 +626,13 @@ end
 	Requires the string to be at most `n` characters long.
 ]=]
 function StringSchema:max(n: number): StringSchema
-    return newString(append(self._checks, function(value)
-        return if #value > n then `expected at most {n} characters, got {#value}` else nil
-    end))
+    return newString(
+        append(self._checks, function(value)
+            return if #value > n then `expected at most {n} characters, got {#value}` else nil
+        end),
+        self.minimum,
+        n
+    )
 end
 
 --[=[
@@ -521,9 +644,13 @@ end
 	Requires the string to be exactly `n` characters long.
 ]=]
 function StringSchema:length(n: number): StringSchema
-    return newString(append(self._checks, function(value)
-        return if #value ~= n then `expected exactly {n} characters, got {#value}` else nil
-    end))
+    return newString(
+        append(self._checks, function(value)
+            return if #value ~= n then `expected exactly {n} characters, got {#value}` else nil
+        end),
+        n,
+        n
+    )
 end
 
 --[=[
@@ -537,7 +664,7 @@ function StringSchema:optional(): OptionalSchema<string>
     local inner = self
     return newOptional(function(value)
         return inner:safeParse(value)
-    end)
+    end, self.minimum, self.maximum)
 end
 
 --[=[
@@ -552,7 +679,7 @@ function StringSchema:default(fallback: string | () -> string): DefaultSchema<st
     local inner = self
     return newDefault(function(value)
         return inner:safeParse(value)
-    end, fallback)
+    end, fallback, self.minimum, self.maximum)
 end
 
 --[=[
@@ -575,13 +702,54 @@ type NumberImpl = {
     default: (self: NumberSchema, fallback: number | () -> number) -> DefaultSchema<number>,
 }
 
-export type NumberSchema = typeof(setmetatable({} :: { _checks: { Check<number> } }, {} :: NumberImpl))
+export type NumberSchema = typeof(setmetatable(
+    {} :: {
+        _checks: { Check<number> },
+        minimum: number?,
+        maximum: number?,
+        isOptional: boolean,
+    },
+    {} :: NumberImpl
+))
 
 local NumberSchema = {} :: NumberImpl
 NumberSchema.__index = NumberSchema
 
-local function newNumber(checks: { Check<number> }): NumberSchema
-    return setmetatable({ _checks = checks }, NumberSchema)
+--[=[
+	@within NumberSchema
+	@prop minimum number?
+	@tag Reflection
+	@readonly
+
+	Smallest value this schema accepts, or `nil` if it is unbounded. Set by
+	[NumberSchema:min].
+]=]
+
+--[=[
+	@within NumberSchema
+	@prop maximum number?
+	@tag Reflection
+	@readonly
+
+	Largest value this schema accepts, or `nil` if it is unbounded. Set by
+	[NumberSchema:max].
+]=]
+
+--[=[
+	@within NumberSchema
+	@prop isOptional boolean
+	@tag Reflection
+	@readonly
+
+	Always `false`.
+]=]
+local function newNumber(checks: { Check<number> }, minimum: number?, maximum: number?): NumberSchema
+    return setmetatable({
+        _checks = checks,
+        minimum = minimum,
+        maximum = maximum,
+        isOptional = false,
+    }, NumberSchema)
 end
 
 --[=[
@@ -632,9 +800,13 @@ end
 	Requires the number to be greater than or equal to `n`.
 ]=]
 function NumberSchema:min(n: number): NumberSchema
-    return newNumber(append(self._checks, function(value)
-        return if value < n then `expected at least {n}, got {value}` else nil
-    end))
+    return newNumber(
+        append(self._checks, function(value)
+            return if value < n then `expected at least {n}, got {value}` else nil
+        end),
+        n,
+        self.maximum
+    )
 end
 
 --[=[
@@ -646,9 +818,13 @@ end
 	Requires the number to be less than or equal to `n`.
 ]=]
 function NumberSchema:max(n: number): NumberSchema
-    return newNumber(append(self._checks, function(value)
-        return if value > n then `expected at most {n}, got {value}` else nil
-    end))
+    return newNumber(
+        append(self._checks, function(value)
+            return if value > n then `expected at most {n}, got {value}` else nil
+        end),
+        self.minimum,
+        n
+    )
 end
 
 --[=[
@@ -659,9 +835,13 @@ end
 	Requires the number to have no fractional part. Infinities are rejected.
 ]=]
 function NumberSchema:integer(): NumberSchema
-    return newNumber(append(self._checks, function(value)
-        return if value % 1 ~= 0 then `expected an integer, got {value}` else nil
-    end))
+    return newNumber(
+        append(self._checks, function(value)
+            return if value % 1 ~= 0 then `expected an integer, got {value}` else nil
+        end),
+        self.minimum,
+        self.maximum
+    )
 end
 
 --[=[
@@ -675,7 +855,7 @@ function NumberSchema:optional(): OptionalSchema<number>
     local inner = self
     return newOptional(function(value)
         return inner:safeParse(value)
-    end)
+    end, self.minimum, self.maximum)
 end
 
 --[=[
@@ -690,7 +870,7 @@ function NumberSchema:default(fallback: number | () -> number): DefaultSchema<nu
     local inner = self
     return newDefault(function(value)
         return inner:safeParse(value)
-    end, fallback)
+    end, fallback, self.minimum, self.maximum)
 end
 
 --[=[
@@ -713,13 +893,28 @@ type BooleanImpl = {
     default: (self: BooleanSchema, fallback: boolean | () -> boolean) -> DefaultSchema<boolean>,
 }
 
-export type BooleanSchema = typeof(setmetatable({} :: { _checks: { Check<boolean> } }, {} :: BooleanImpl))
+export type BooleanSchema = typeof(setmetatable(
+    {} :: {
+        _checks: { Check<boolean> },
+        isOptional: boolean,
+    },
+    {} :: BooleanImpl
+))
 
 local BooleanSchema = {} :: BooleanImpl
 BooleanSchema.__index = BooleanSchema
 
+--[=[
+	@within BooleanSchema
+	@prop isOptional boolean
+	@tag Reflection
+	@readonly
+
+	Always `false`. Booleans carry no `minimum` or `maximum`, since neither
+	means anything for two values.
+]=]
 local function newBoolean(checks: { Check<boolean> }): BooleanSchema
-    return setmetatable({ _checks = checks }, BooleanSchema)
+    return setmetatable({ _checks = checks, isOptional = false }, BooleanSchema)
 end
 
 --[=[
@@ -793,7 +988,7 @@ function BooleanSchema:optional(): OptionalSchema<boolean>
     local inner = self
     return newOptional(function(value)
         return inner:safeParse(value)
-    end)
+    end, nil, nil)
 end
 
 --[=[
@@ -808,7 +1003,7 @@ function BooleanSchema:default(fallback: boolean | () -> boolean): DefaultSchema
     local inner = self
     return newDefault(function(value)
         return inner:safeParse(value)
-    end, fallback)
+    end, fallback, nil, nil)
 end
 
 --[=[
@@ -822,6 +1017,9 @@ end
 	```
 ]=]
 export type ArraySchema<T> = {
+    minimum: number?,
+    maximum: number?,
+    isOptional: boolean,
     safeParse: (self: ArraySchema<T>, value: unknown) -> Result<{ T }>,
     parse: (self: ArraySchema<T>, value: unknown) -> { T },
     min: (self: ArraySchema<T>, n: number) -> ArraySchema<T>,
@@ -832,8 +1030,45 @@ export type ArraySchema<T> = {
 
 type LengthCheck = (length: number) -> string?
 
-local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { LengthCheck }): ArraySchema<T>
+local function newArray<T>(
+    inner: (value: unknown) -> Result<T>,
+    checks: { LengthCheck },
+    minimum: number?,
+    maximum: number?
+): ArraySchema<T>
     local self = {}
+
+    --[=[
+		@within ArraySchema
+		@prop minimum number?
+		@tag Reflection
+		@readonly
+
+		Fewest elements this schema accepts, or `nil` if it is unbounded. Set
+		by [ArraySchema:min].
+	]=]
+    self.minimum = minimum
+
+    --[=[
+		@within ArraySchema
+		@prop maximum number?
+		@tag Reflection
+		@readonly
+
+		Most elements this schema accepts, or `nil` if it is unbounded. Set by
+		[ArraySchema:max].
+	]=]
+    self.maximum = maximum
+
+    --[=[
+		@within ArraySchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Always `false`.
+	]=]
+    self.isOptional = false
 
     --[=[
 		@within ArraySchema
@@ -924,7 +1159,9 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
             inner,
             append(checks, function(length)
                 return if length < n then `expected at least {n} elements, got {length}` else nil
-            end)
+            end),
+            n,
+            maximum
         )
     end
 
@@ -942,7 +1179,9 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
             inner,
             append(checks, function(length)
                 return if length > n then `expected at most {n} elements, got {length}` else nil
-            end)
+            end),
+            minimum,
+            n
         )
     end
 
@@ -957,7 +1196,7 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
     function self:optional(): OptionalSchema<{ T }>
         return newOptional(function(value)
             return self:safeParse(value)
-        end)
+        end, self.minimum, self.maximum)
     end
 
     --[=[
@@ -974,7 +1213,7 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
     function self:default(fallback: { T } | () -> { T }): DefaultSchema<{ T }>
         return newDefault(function(value)
             return self:safeParse(value)
-        end, fallback)
+        end, fallback, self.minimum, self.maximum)
     end
 
     return (self :: any) :: ArraySchema<T>
@@ -1005,6 +1244,9 @@ end
 	```
 ]=]
 export type TupleSchema<T> = {
+    minimum: number?,
+    maximum: number?,
+    isOptional: boolean,
     safeParse: (self: TupleSchema<T>, value: unknown) -> Result<{ T }>,
     parse: (self: TupleSchema<T>, value: unknown) -> { T },
     optional: (self: TupleSchema<T>) -> OptionalSchema<{ T }>,
@@ -1015,6 +1257,37 @@ type Positions = { { safeParse: (any, unknown) -> Result<any> } }
 
 local function newTuple<T>(positions: Positions): TupleSchema<T>
     local self = {}
+
+    --[=[
+		@within TupleSchema
+		@prop minimum number?
+		@tag Reflection
+		@readonly
+
+		Always `nil`. How few values a tuple accepts depends on how many of its
+		trailing positions tolerate `nil`, so there is no single number.
+	]=]
+    self.minimum = nil
+
+    --[=[
+		@within TupleSchema
+		@prop maximum number?
+		@tag Reflection
+		@readonly
+
+		The number of positions, which is the most values this schema accepts.
+	]=]
+    self.maximum = #positions
+
+    --[=[
+		@within TupleSchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Always `false`.
+	]=]
+    self.isOptional = false
 
     --[=[
 		@within TupleSchema
@@ -1100,7 +1373,7 @@ local function newTuple<T>(positions: Positions): TupleSchema<T>
     function self:optional(): OptionalSchema<{ T }>
         return newOptional(function(value)
             return self:safeParse(value)
-        end)
+        end, self.minimum, self.maximum)
     end
 
     --[=[
@@ -1117,7 +1390,7 @@ local function newTuple<T>(positions: Positions): TupleSchema<T>
     function self:default(fallback: { T } | () -> { T }): DefaultSchema<{ T }>
         return newDefault(function(value)
             return self:safeParse(value)
-        end, fallback)
+        end, fallback, self.minimum, self.maximum)
     end
 
     return (self :: any) :: TupleSchema<T>
@@ -1146,6 +1419,7 @@ end
 ]=]
 export type ObjectSchema<T, S> = {
     shape: S,
+    isOptional: boolean,
     safeParse: (self: ObjectSchema<T, S>, value: unknown) -> Result<T>,
     parse: (self: ObjectSchema<T, S>, value: unknown) -> T,
     strict: (self: ObjectSchema<T, S>) -> ObjectSchema<T, S>,
@@ -1180,6 +1454,17 @@ local function newObject<T, S>(shape: Shape, strict: boolean): ObjectSchema<T, S
     local fields = table.freeze(table.clone(shape))
 
     self.shape = fields
+
+    --[=[
+		@within ObjectSchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Always `false`. Objects carry no `minimum` or `maximum`; read
+		[ObjectSchema.shape] to reach a field's own limits.
+	]=]
+    self.isOptional = false
 
     --[=[
 		@within ObjectSchema
@@ -1281,7 +1566,7 @@ local function newObject<T, S>(shape: Shape, strict: boolean): ObjectSchema<T, S
     function self:optional(): OptionalSchema<T>
         return newOptional(function(value)
             return self:safeParse(value)
-        end)
+        end, nil, nil)
     end
 
     --[=[
@@ -1298,7 +1583,7 @@ local function newObject<T, S>(shape: Shape, strict: boolean): ObjectSchema<T, S
     function self:default(fallback: T | () -> T): DefaultSchema<T>
         return newDefault(function(value)
             return self:safeParse(value)
-        end, fallback)
+        end, fallback, nil, nil)
     end
 
     return (self :: any) :: ObjectSchema<T, S>
@@ -1512,7 +1797,7 @@ function Vet.array<S>(item: S): ArraySchema<infer<S>>
 
     return newArray(function(value)
         return schema:safeParse(value)
-    end, {})
+    end, {}, nil, nil)
 end
 
 --[=[
