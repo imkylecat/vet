@@ -12,8 +12,8 @@ local Level = v.number():integer():min(1):max(100)
 ```lua
 local Level = v.number():integer():min(1):max(100)
 ```"><link data-rh="true" rel="canonical" href="https://imkylecat.github.io/vet/api/NumberSchema"><link data-rh="true" rel="alternate" href="https://imkylecat.github.io/vet/api/NumberSchema" hreflang="en"><link data-rh="true" rel="alternate" href="https://imkylecat.github.io/vet/api/NumberSchema" hreflang="x-default"><link rel="stylesheet" href="/vet/assets/css/styles.5ec48d9a.css">
-<script src="/vet/assets/js/runtime~main.a9497608.js" defer="defer"></script>
-<script src="/vet/assets/js/main.9293d86c.js" defer="defer"></script>
+<script src="/vet/assets/js/runtime~main.7cb90402.js" defer="defer"></script>
+<script src="/vet/assets/js/main.881fb700.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -23,41 +23,54 @@ local Level = v.number():integer():min(1):max(100)
 <p>Validates numbers. NaN is rejected before any refinement runs.</p>
 <pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> Level <span class="token operator">=</span> v<span class="token punctuation">.</span><span class="token function">number</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span><span class="token function">integer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span><span class="token function">min</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span><span class="token function">max</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span>
 </code></pre>
-</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="properties">Properties<a href="#properties" class="hash-link" aria-label="Direct link to Properties" title="Direct link to Properties" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="minimum"><code style="text-decoration:none">minimum</code><a href="#minimum" class="hash-link" aria-label="Direct link to minimum" title="Direct link to minimum" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L727"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->.<!-- -->minimum<!-- -->:<!-- --> </code> <code class="blue_P4bS">number?</code></div><div>
+</div></header><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="properties">Properties<a href="#properties" class="hash-link" aria-label="Direct link to Properties" title="Direct link to Properties" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="minimum"><code style="text-decoration:none">minimum</code><a href="#minimum" class="hash-link" aria-label="Direct link to minimum" title="Direct link to minimum" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L775"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->.<!-- -->minimum<!-- -->:<!-- --> </code> <code class="blue_P4bS">number?</code></div><div>
 <p>
   Smallest value this schema accepts, or <code>nil</code> if it is unbounded. Set by
   <a href="/vet/api/NumberSchema#min">NumberSchema:min</a>.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="maximum"><code style="text-decoration:none">maximum</code><a href="#maximum" class="hash-link" aria-label="Direct link to maximum" title="Direct link to maximum" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L737"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->.<!-- -->maximum<!-- -->:<!-- --> </code> <code class="blue_P4bS">number?</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="maximum"><code style="text-decoration:none">maximum</code><a href="#maximum" class="hash-link" aria-label="Direct link to maximum" title="Direct link to maximum" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L785"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->.<!-- -->maximum<!-- -->:<!-- --> </code> <code class="blue_P4bS">number?</code></div><div>
 <p>
   Largest value this schema accepts, or <code>nil</code> if it is unbounded. Set by
   <a href="/vet/api/NumberSchema#max">NumberSchema:max</a>.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="isOptional"><code style="text-decoration:none">isOptional</code><a href="#isOptional" class="hash-link" aria-label="Direct link to isOptional" title="Direct link to isOptional" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L746"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->.<!-- -->isOptional<!-- -->:<!-- --> </code> <code class="blue_P4bS">boolean</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="isOptional"><code style="text-decoration:none">isOptional</code><a href="#isOptional" class="hash-link" aria-label="Direct link to isOptional" title="Direct link to isOptional" translate="no">​</a></h3><span class="badge_Ba2I" style="color:#e74c3c"><span class="badgeTooltip_cWXP">This item is read only and cannot be modified.</span><span class="badgeToolTipTail_H9D_"><svg xmlns="http://www.w3.org/2000/svg" height="300px" width="300px" fill="#e74c3c" x="0px" y="0px" viewBox="0 0 96 96"><path d="M70.354,15.662h-7.496H25.566c-3.282,0-5.19-0.776-5.728-1.169v-1.456c0.538-0.393,2.445-1.168,5.728-1.168h46.479V8H25.566  c-4.776,0-9.594,1.468-9.594,4.747v61.458C15.972,86.645,20.328,88,37.495,88h42.535V15.662H70.354z"></path></svg> <!-- -->Read Only</span></span><span class="docTag__6UZ" style="border-color:#dc0073;color:#dc0073">Reflection</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L794"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->.<!-- -->isOptional<!-- -->:<!-- --> </code> <code class="blue_P4bS">boolean</code></div><div>
 <p>Always <code>false</code>.</p>
-</div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="safeParse"><code style="text-decoration:none">safeParse</code><a href="#safeParse" class="hash-link" aria-label="Direct link to safeParse" title="Direct link to safeParse" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#00a1e4;color:#00a1e4">Parsing</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L764"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">safeParse</code><code>(</code><code>value<!-- -->: </code><code class="blue_P4bS">unknown</code><code>) → </code><code class="blue_P4bS">Result</code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">number</code><code class="op_lSLc">&gt;</code></div><div>
+</div><h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions" translate="no">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="safeParse"><code style="text-decoration:none">safeParse</code><a href="#safeParse" class="hash-link" aria-label="Direct link to safeParse" title="Direct link to safeParse" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#00a1e4;color:#00a1e4">Parsing</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L812"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">safeParse</code><code>(</code><code>value<!-- -->: </code><code class="blue_P4bS">unknown</code><code>) → </code><code class="blue_P4bS">Result</code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">number</code><code class="op_lSLc">&gt;</code></div><div>
 <p>
   Validates <code>value</code> without throwing. All refinements run, so the returned
   issues describe every failure rather than only the first.
 </p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="parse"><code style="text-decoration:none">parse</code><a href="#parse" class="hash-link" aria-label="Direct link to parse" title="Direct link to parse" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#00a1e4;color:#00a1e4">Parsing</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L785"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">parse</code><code>(</code><code>value<!-- -->: </code><code class="blue_P4bS">unknown</code><code>) → </code><code class="blue_P4bS">number</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="parse"><code style="text-decoration:none">parse</code><a href="#parse" class="hash-link" aria-label="Direct link to parse" title="Direct link to parse" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#00a1e4;color:#00a1e4">Parsing</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L833"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">parse</code><code>(</code><code>value<!-- -->: </code><code class="blue_P4bS">unknown</code><code>) → </code><code class="blue_P4bS">number</code></div><div>
 <p>Validates <code>value</code> and returns it, throwing on failure.</p>
-</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;expected ...&quot;</td><td>Thrown when `value` fails validation</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="min"><code style="text-decoration:none">min</code><a href="#min" class="hash-link" aria-label="Direct link to min" title="Direct link to min" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Refinement</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L802"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">min</code><code>(</code><div class="inset_uKQm"><div><code>n<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+</div><h3>Errors</h3><table class="errorTable_jfN8"><thead><tr><th>Type</th><th>Description</th></tr></thead><tbody><tr><td>&quot;expected ...&quot;</td><td>Thrown when `value` fails validation</td></tr></tbody></table><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="min"><code style="text-decoration:none">min</code><a href="#min" class="hash-link" aria-label="Direct link to min" title="Direct link to min" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Refinement</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L850"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">min</code><code>(</code><div class="inset_uKQm"><div><code>n<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
 <p>Minimum value, inclusive</p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/NumberSchema">NumberSchema</a></code></div><div>
 <p>Requires the number to be greater than or equal to <code>n</code>.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="max"><code style="text-decoration:none">max</code><a href="#max" class="hash-link" aria-label="Direct link to max" title="Direct link to max" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Refinement</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L820"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">max</code><code>(</code><div class="inset_uKQm"><div><code>n<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="max"><code style="text-decoration:none">max</code><a href="#max" class="hash-link" aria-label="Direct link to max" title="Direct link to max" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Refinement</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L868"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">max</code><code>(</code><div class="inset_uKQm"><div><code>n<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
 <p>Maximum value, inclusive</p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/NumberSchema">NumberSchema</a></code></div><div>
 <p>Requires the number to be less than or equal to <code>n</code>.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="integer"><code style="text-decoration:none">integer</code><a href="#integer" class="hash-link" aria-label="Direct link to integer" title="Direct link to integer" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Refinement</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L837"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">integer</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/NumberSchema">NumberSchema</a></code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="integer"><code style="text-decoration:none">integer</code><a href="#integer" class="hash-link" aria-label="Direct link to integer" title="Direct link to integer" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#ff793f;color:#ff793f">Refinement</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L885"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">integer</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/NumberSchema">NumberSchema</a></code></div><div>
 <p>Requires the number to have no fractional part. Infinities are rejected.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="optional"><code style="text-decoration:none">optional</code><a href="#optional" class="hash-link" aria-label="Direct link to optional" title="Direct link to optional" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L854"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">optional</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/OptionalSchema">OptionalSchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">number</code><code class="op_lSLc">&gt;</code></div><div>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="optional"><code style="text-decoration:none">optional</code><a href="#optional" class="hash-link" aria-label="Direct link to optional" title="Direct link to optional" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L902"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">optional</code><code>(</code><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/OptionalSchema">OptionalSchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">number</code><code class="op_lSLc">&gt;</code></div><div>
 <p>Wraps this schema so that <code>nil</code> is also accepted.</p>
-</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="default"><code style="text-decoration:none">default</code><a href="#default" class="hash-link" aria-label="Direct link to default" title="Direct link to default" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L869"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">default</code><code>(</code><div class="inset_uKQm"><div><code>fallback<!-- -->: </code><code class="blue_P4bS">number</code><code class="op_lSLc"> | </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="default"><code style="text-decoration:none">default</code><a href="#default" class="hash-link" aria-label="Direct link to default" title="Direct link to default" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L917"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">default</code><code>(</code><div class="inset_uKQm"><div><code>fallback<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
 <p>Value used when parsing <code>nil</code></p>
 </span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/DefaultSchema">DefaultSchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">number</code><code class="op_lSLc">&gt;</code></div><div>
 <p>Wraps this schema so that <code>nil</code> yields <code>fallback</code> instead of failing.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="defaultWith"><code style="text-decoration:none">defaultWith</code><a href="#defaultWith" class="hash-link" aria-label="Direct link to defaultWith" title="Direct link to defaultWith" translate="no">​</a></h3><span class="docTag__6UZ" style="border-color:#925FB9;color:#925FB9">Wrapper</span><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/imkylecat/vet/blob/main/src/init.luau#L940"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>NumberSchema<!-- -->:</code><code class="green_DgR4">defaultWith</code><code>(</code><div class="inset_uKQm"><div><code>produce<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>Builds the value used when parsing <code>nil</code></p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/vet/api/DefaultSchema">DefaultSchema</a></code><code class="op_lSLc">&lt;</code><code class="blue_P4bS">number</code><code class="op_lSLc">&gt;</code></div><div>
+<p>
+  Like <a href="/vet/api/NumberSchema#default">NumberSchema:default</a>, but calls <code>produce</code> on every parse instead of
+  reusing one value. Use it when the fallback is a table, since a single
+  table would otherwise be shared by every caller and mutable through any
+  of them.
+</p>
+<p>
+  The produced value is validated each time, so a producer that returns
+  something invalid fails at parse rather than silently passing through.
+</p>
 </div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
     &quot;functions&quot;: [
         {
@@ -81,7 +94,7 @@ local Level = v.number():integer():min(1):max(100)
                 &quot;Parsing&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 764,
+                &quot;line&quot;: 812,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -112,7 +125,7 @@ local Level = v.number():integer():min(1):max(100)
                 }
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 785,
+                &quot;line&quot;: 833,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -137,7 +150,7 @@ local Level = v.number():integer():min(1):max(100)
                 &quot;Refinement&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 802,
+                &quot;line&quot;: 850,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -162,7 +175,7 @@ local Level = v.number():integer():min(1):max(100)
                 &quot;Refinement&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 820,
+                &quot;line&quot;: 868,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -181,7 +194,7 @@ local Level = v.number():integer():min(1):max(100)
                 &quot;Refinement&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 837,
+                &quot;line&quot;: 885,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -200,7 +213,7 @@ local Level = v.number():integer():min(1):max(100)
                 &quot;Wrapper&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 854,
+                &quot;line&quot;: 902,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -211,7 +224,7 @@ local Level = v.number():integer():min(1):max(100)
                 {
                     &quot;name&quot;: &quot;fallback&quot;,
                     &quot;desc&quot;: &quot;Value used when parsing `nil`&quot;,
-                    &quot;lua_type&quot;: &quot;number | () -&gt; number&quot;
+                    &quot;lua_type&quot;: &quot;number&quot;
                 }
             ],
             &quot;returns&quot;: [
@@ -225,7 +238,32 @@ local Level = v.number():integer():min(1):max(100)
                 &quot;Wrapper&quot;
             ],
             &quot;source&quot;: {
-                &quot;line&quot;: 869,
+                &quot;line&quot;: 917,
+                &quot;path&quot;: &quot;src/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;defaultWith&quot;,
+            &quot;desc&quot;: &quot;Like [NumberSchema:default], but calls `produce` on every parse instead of\nreusing one value. Use it when the fallback is a table, since a single\ntable would otherwise be shared by every caller and mutable through any\nof them.\n\nThe produced value is validated each time, so a producer that returns\nsomething invalid fails at parse rather than silently passing through.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;produce&quot;,
+                    &quot;desc&quot;: &quot;Builds the value used when parsing `nil`&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;DefaultSchema&lt;number&gt;&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;tags&quot;: [
+                &quot;Wrapper&quot;
+            ],
+            &quot;source&quot;: {
+                &quot;line&quot;: 940,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         }
@@ -240,7 +278,7 @@ local Level = v.number():integer():min(1):max(100)
             ],
             &quot;readonly&quot;: true,
             &quot;source&quot;: {
-                &quot;line&quot;: 727,
+                &quot;line&quot;: 775,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -253,7 +291,7 @@ local Level = v.number():integer():min(1):max(100)
             ],
             &quot;readonly&quot;: true,
             &quot;source&quot;: {
-                &quot;line&quot;: 737,
+                &quot;line&quot;: 785,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         },
@@ -266,7 +304,7 @@ local Level = v.number():integer():min(1):max(100)
             ],
             &quot;readonly&quot;: true,
             &quot;source&quot;: {
-                &quot;line&quot;: 746,
+                &quot;line&quot;: 794,
                 &quot;path&quot;: &quot;src/init.luau&quot;
             }
         }
@@ -275,9 +313,9 @@ local Level = v.number():integer():min(1):max(100)
     &quot;name&quot;: &quot;NumberSchema&quot;,
     &quot;desc&quot;: &quot;Validates numbers. NaN is rejected before any refinement runs.\n\n```lua\nlocal Level = v.number():integer():min(1):max(100)\n```&quot;,
     &quot;source&quot;: {
-        &quot;line&quot;: 694,
+        &quot;line&quot;: 741,
         &quot;path&quot;: &quot;src/init.luau&quot;
     }
-}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a><ul><li><a href="#Reflection" class="table-of-contents__link toc-highlight">Reflection</a><ul><li><a href="#isOptional" class="table-of-contents__link toc-highlight">isOptional</a></li><li><a href="#maximum" class="table-of-contents__link toc-highlight">maximum</a></li><li><a href="#minimum" class="table-of-contents__link toc-highlight">minimum</a></li></ul></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Parsing" class="table-of-contents__link toc-highlight">Parsing</a><ul><li><a href="#parse" class="table-of-contents__link toc-highlight">:parse</a></li><li><a href="#safeParse" class="table-of-contents__link toc-highlight">:safeParse</a></li></ul></li><li><a href="#Refinement" class="table-of-contents__link toc-highlight">Refinement</a><ul><li><a href="#integer" class="table-of-contents__link toc-highlight">:integer</a></li><li><a href="#max" class="table-of-contents__link toc-highlight">:max</a></li><li><a href="#min" class="table-of-contents__link toc-highlight">:min</a></li></ul></li><li><a href="#Wrapper" class="table-of-contents__link toc-highlight">Wrapper</a><ul><li><a href="#default" class="table-of-contents__link toc-highlight">:default</a></li><li><a href="#optional" class="table-of-contents__link toc-highlight">:optional</a></li></ul></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 imkylecat. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a><ul><li><a href="#Reflection" class="table-of-contents__link toc-highlight">Reflection</a><ul><li><a href="#isOptional" class="table-of-contents__link toc-highlight">isOptional</a></li><li><a href="#maximum" class="table-of-contents__link toc-highlight">maximum</a></li><li><a href="#minimum" class="table-of-contents__link toc-highlight">minimum</a></li></ul></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Parsing" class="table-of-contents__link toc-highlight">Parsing</a><ul><li><a href="#parse" class="table-of-contents__link toc-highlight">:parse</a></li><li><a href="#safeParse" class="table-of-contents__link toc-highlight">:safeParse</a></li></ul></li><li><a href="#Refinement" class="table-of-contents__link toc-highlight">Refinement</a><ul><li><a href="#integer" class="table-of-contents__link toc-highlight">:integer</a></li><li><a href="#max" class="table-of-contents__link toc-highlight">:max</a></li><li><a href="#min" class="table-of-contents__link toc-highlight">:min</a></li></ul></li><li><a href="#Wrapper" class="table-of-contents__link toc-highlight">Wrapper</a><ul><li><a href="#default" class="table-of-contents__link toc-highlight">:default</a></li><li><a href="#defaultWith" class="table-of-contents__link toc-highlight">:defaultWith</a></li><li><a href="#optional" class="table-of-contents__link toc-highlight">:optional</a></li></ul></li></ul></li></ul></div></div></div></div></main></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 imkylecat. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
 </body>
 </html>
