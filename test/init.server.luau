@@ -62,6 +62,38 @@ if not nestedFailure.success then
     assert(nestedFailure.issues[1].path[3] == "level")
 end
 
+local Settings = Vet.object({
+    volume = Vet.number():min(0):max(1):default(0.5),
+    muted = Vet.boolean():default(false),
+    name = Vet.string():min(1),
+})
+
+local filled = Settings:parse({ name = "kyle" })
+
+assert(filled.volume == 0.5)
+assert(filled.muted == false)
+assert(Settings:parse({ name = "kyle", volume = 0.1 }).volume == 0.1)
+assert(not Settings:safeParse({ name = "kyle", volume = 2 }).success)
+assert(not Settings:safeParse({}).success)
+
+-- Filling a default copies rather than modifying the table handed to parse.
+local original: { name: string, volume: number? } = { name = "kyle" }
+assert(Settings:parse(original) ~= original)
+assert(original.volume == nil)
+
+-- Nothing to fill means the original table comes straight back.
+local plain = { name = "kyle" }
+assert(Vet.object({ name = Vet.string() }):parse(plain) == plain)
+
+-- A constant table default is shared between parses, so build tables per parse.
+local Tags = Vet.array(Vet.string()):default(function()
+    return {}
+end)
+
+local firstTags = Tags:parse(nil)
+table.insert(firstTags, "hi")
+assert(#Tags:parse(nil) == 0)
+
 -- infer<S> resolves to the type a schema parses to. It runs during analysis, so
 -- these annotations are the test: they only type-check if infer got it right.
 type InferredUsername = Vet.infer<typeof(Username)>
@@ -107,6 +139,14 @@ assert(#asList == 2)
 assert(userName == "kyle")
 assert(userLevel == 5)
 assert(userNickname == nil)
+
+-- A defaulted field infers as required, not optional, since parse always fills it.
+type InferredSettings = Vet.infer<typeof(Settings)>
+
+local settings: InferredSettings = Settings:parse({ name = "kyle" })
+local settingsVolume: number = settings.volume
+
+assert(settingsVolume == 0.5)
 
 -- These must NOT compile. Uncomment to confirm infer is exact rather than any:
 -- local notANumber: number = username

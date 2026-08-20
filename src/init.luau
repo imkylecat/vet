@@ -321,6 +321,94 @@ local function newOptional<T>(inner: (value: unknown) -> Result<T>): OptionalSch
 end
 
 --[=[
+	@class DefaultSchema
+
+	Substitutes a fallback when the value is `nil`. Unlike [OptionalSchema] the
+	result is never `nil`, so downstream code does not have to handle a missing
+	value.
+
+	```lua
+	local Volume = Vet.number():min(0):max(1):default(0.5)
+
+	Volume:parse(nil)  --> 0.5
+	Volume:parse(0.2)  --> 0.2
+	Volume:parse(2)    --> errors
+	```
+
+	Pass a function to build the fallback per parse, which matters for tables
+	since a constant would be shared by every caller:
+
+	```lua
+	local Tags = Vet.array(Vet.string()):default(function()
+		return {}
+	end)
+	```
+]=]
+export type DefaultSchema<T> = {
+    safeParse: (self: DefaultSchema<T>, value: unknown) -> Result<T>,
+    parse: (self: DefaultSchema<T>, value: unknown) -> T,
+}
+
+local function newDefault<T>(inner: (value: unknown) -> Result<T>, fallback: T | () -> T): DefaultSchema<T>
+    local self = {}
+    local produce: (() -> T)? = nil
+    local constant: T = nil :: any
+
+    if type(fallback) == "function" then
+        produce = fallback :: () -> T
+    else
+        -- Validate a constant fallback up front, so a mistake surfaces where
+        -- the schema is written rather than on some later parse of nil.
+        local result = inner(fallback :: any)
+
+        if not result.success then
+            error(`default value is invalid: {describe(result.issues)}`, 3)
+        end
+
+        constant = result.value
+    end
+
+    --[=[
+		@within DefaultSchema
+		@param value unknown
+		@return Result<T>
+
+		Returns the fallback when `value` is `nil`, and otherwise defers to the
+		wrapped schema. A fallback built by a function is validated too.
+	]=]
+    function self.safeParse(_self: any, value: unknown): Result<T>
+        if value == nil then
+            if produce ~= nil then
+                return inner(produce())
+            end
+
+            return { success = true, value = constant }
+        end
+
+        return inner(value)
+    end
+
+    --[=[
+		@within DefaultSchema
+		@param value unknown
+		@return T
+		@error "expected ..." -- Thrown when a non-nil `value` fails validation
+
+		Validates `value` and returns it, throwing on failure.
+	]=]
+    function self.parse(selfRef: any, value: unknown): T
+        local result = self.safeParse(selfRef, value)
+        if result.success then
+            return result.value
+        end
+
+        error(describe(result.issues), 2)
+    end
+
+    return (self :: any) :: DefaultSchema<T>
+end
+
+--[=[
 	@class StringSchema
 
 	Validates strings. Every refinement returns a new schema, so a base schema
@@ -339,6 +427,7 @@ type StringImpl = {
     max: (self: StringSchema, n: number) -> StringSchema,
     length: (self: StringSchema, n: number) -> StringSchema,
     optional: (self: StringSchema) -> OptionalSchema<string>,
+    default: (self: StringSchema, fallback: string | () -> string) -> DefaultSchema<string>,
 }
 
 export type StringSchema = typeof(setmetatable({} :: { _checks: { Check<string> } }, {} :: StringImpl))
@@ -436,6 +525,20 @@ function StringSchema:optional(): OptionalSchema<string>
 end
 
 --[=[
+	@within StringSchema
+	@param fallback string | () -> string -- Value used when parsing `nil`
+	@return DefaultSchema<string>
+
+	Wraps this schema so that `nil` yields `fallback` instead of failing.
+]=]
+function StringSchema:default(fallback: string | () -> string): DefaultSchema<string>
+    local inner = self
+    return newDefault(function(value)
+        return inner:safeParse(value)
+    end, fallback)
+end
+
+--[=[
 	@class NumberSchema
 
 	Validates numbers. NaN is rejected before any refinement runs.
@@ -452,6 +555,7 @@ type NumberImpl = {
     max: (self: NumberSchema, n: number) -> NumberSchema,
     integer: (self: NumberSchema) -> NumberSchema,
     optional: (self: NumberSchema) -> OptionalSchema<number>,
+    default: (self: NumberSchema, fallback: number | () -> number) -> DefaultSchema<number>,
 }
 
 export type NumberSchema = typeof(setmetatable({} :: { _checks: { Check<number> } }, {} :: NumberImpl))
@@ -552,6 +656,20 @@ function NumberSchema:optional(): OptionalSchema<number>
 end
 
 --[=[
+	@within NumberSchema
+	@param fallback number | () -> number -- Value used when parsing `nil`
+	@return DefaultSchema<number>
+
+	Wraps this schema so that `nil` yields `fallback` instead of failing.
+]=]
+function NumberSchema:default(fallback: number | () -> number): DefaultSchema<number>
+    local inner = self
+    return newDefault(function(value)
+        return inner:safeParse(value)
+    end, fallback)
+end
+
+--[=[
 	@class BooleanSchema
 
 	Validates booleans. Truthy values that are not booleans, such as `1` or
@@ -568,6 +686,7 @@ type BooleanImpl = {
     isTrue: (self: BooleanSchema) -> BooleanSchema,
     isFalse: (self: BooleanSchema) -> BooleanSchema,
     optional: (self: BooleanSchema) -> OptionalSchema<boolean>,
+    default: (self: BooleanSchema, fallback: boolean | () -> boolean) -> DefaultSchema<boolean>,
 }
 
 export type BooleanSchema = typeof(setmetatable({} :: { _checks: { Check<boolean> } }, {} :: BooleanImpl))
@@ -649,6 +768,20 @@ function BooleanSchema:optional(): OptionalSchema<boolean>
 end
 
 --[=[
+	@within BooleanSchema
+	@param fallback boolean | () -> boolean -- Value used when parsing `nil`
+	@return DefaultSchema<boolean>
+
+	Wraps this schema so that `nil` yields `fallback` instead of failing.
+]=]
+function BooleanSchema:default(fallback: boolean | () -> boolean): DefaultSchema<boolean>
+    local inner = self
+    return newDefault(function(value)
+        return inner:safeParse(value)
+    end, fallback)
+end
+
+--[=[
 	@class ArraySchema
 
 	Validates a contiguous array where every element matches one inner schema.
@@ -664,6 +797,7 @@ export type ArraySchema<T> = {
     min: (self: ArraySchema<T>, n: number) -> ArraySchema<T>,
     max: (self: ArraySchema<T>, n: number) -> ArraySchema<T>,
     optional: (self: ArraySchema<T>) -> OptionalSchema<{ T }>,
+    default: (self: ArraySchema<T>, fallback: { T } | () -> { T }) -> DefaultSchema<{ T }>,
 }
 
 type LengthCheck = (length: number) -> string?
@@ -786,6 +920,21 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
         end)
     end
 
+    --[=[
+		@within ArraySchema
+		@param fallback { T } | () -> { T } -- Value used when parsing `nil`
+		@return DefaultSchema<{ T }>
+
+		Wraps this schema so that `nil` yields `fallback` instead of failing.
+		Prefer passing a function, since a constant array would be shared by
+		every parse.
+	]=]
+    function self.default(selfRef: any, fallback: { T } | () -> { T }): DefaultSchema<{ T }>
+        return newDefault(function(value)
+            return selfRef:safeParse(value)
+        end, fallback)
+    end
+
     return (self :: any) :: ArraySchema<T>
 end
 
@@ -793,8 +942,12 @@ end
 	@class ObjectSchema
 
 	Validates a table field by field. Fields absent from the shape are ignored
-	unless the schema is made [ObjectSchema:strict], and the original table is
-	returned rather than a copy.
+	unless the schema is made [ObjectSchema:strict].
+
+	The original table is returned untouched unless a field fills in a value —
+	a [DefaultSchema] field, or a nested object that filled one in. In that case
+	the input is shallow copied and the filled values written to the copy, so
+	the value handed to `parse` is never modified.
 
 	```lua
 	local User = Vet.object({
@@ -808,6 +961,7 @@ export type ObjectSchema<T> = {
     parse: (self: ObjectSchema<T>, value: unknown) -> T,
     strict: (self: ObjectSchema<T>) -> ObjectSchema<T>,
     optional: (self: ObjectSchema<T>) -> OptionalSchema<T>,
+    default: (self: ObjectSchema<T>, fallback: T | () -> T) -> DefaultSchema<T>,
 }
 
 type Shape = { [string]: { safeParse: (any, unknown) -> Result<any> } }
@@ -829,11 +983,25 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
         end
 
         local issues: { Issue } = {}
+        local output = value :: any
+        local copied = false
 
         for key, schema in shape do
-            local result = schema:safeParse((value :: any)[key])
+            local raw = (value :: any)[key]
+            local result = schema:safeParse(raw)
 
-            if not result.success then
+            if result.success then
+                -- A field only produces a different value when something filled
+                -- it in, so the copy is paid for only by schemas using defaults.
+                if result.value ~= raw then
+                    if not copied then
+                        output = table.clone(value :: any)
+                        copied = true
+                    end
+
+                    output[key] = result.value
+                end
+            else
                 for _, issue in result.issues do
                     table.insert(issues, { path = prependPath(key, issue.path), message = issue.message })
                 end
@@ -852,7 +1020,7 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
             return { success = false, issues = issues }
         end
 
-        return { success = true, value = (value :: any) :: T }
+        return { success = true, value = output :: T }
     end
 
     --[=[
@@ -894,6 +1062,21 @@ local function newObject<T>(shape: Shape, strict: boolean): ObjectSchema<T>
         return newOptional(function(value)
             return selfRef:safeParse(value)
         end)
+    end
+
+    --[=[
+		@within ObjectSchema
+		@param fallback T | () -> T -- Value used when parsing `nil`
+		@return DefaultSchema<T>
+
+		Wraps this schema so that `nil` yields `fallback` instead of failing.
+		Prefer passing a function, since a constant table would be shared by
+		every parse.
+	]=]
+    function self.default(selfRef: any, fallback: T | () -> T): DefaultSchema<T>
+        return newDefault(function(value)
+            return selfRef:safeParse(value)
+        end, fallback)
     end
 
     return (self :: any) :: ObjectSchema<T>
