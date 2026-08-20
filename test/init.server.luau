@@ -20,8 +20,27 @@ local Enabled = Vet.boolean()
 
 assert(Enabled:parse(false) == false)
 assert(not Enabled:safeParse(1).success)
-assert(Enabled:isTrue():safeParse(true).success)
-assert(not Enabled:isTrue():safeParse(false).success)
+-- Pinning a boolean to one value is what literal is for.
+local Consented = Vet.literal(true)
+
+assert(Consented:parse(true) == true)
+assert(not Consented:safeParse(false).success)
+assert(not Consented:safeParse("true").success)
+assert(not Consented:safeParse(nil).success)
+assert(Consented:optional():safeParse(nil).success)
+
+local Kind = Vet.literal("player")
+
+assert(Kind:parse("player") == "player")
+assert(not Kind:safeParse("npc").success)
+assert(Kind.value == "player")
+assert(Kind.isOptional == false)
+
+-- Literals compose into objects the same way any other schema does.
+local Tagged = Vet.object({ kind = Vet.literal("npc"), level = Vet.number():integer() })
+
+assert(Tagged:parse({ kind = "npc", level = 3 }).kind == "npc")
+assert(not Tagged:safeParse({ kind = "player", level = 3 }).success)
 
 local Nickname = Vet.string():max(20):optional()
 

@@ -1028,8 +1028,6 @@ type BooleanImpl = {
     _validate: (self: BooleanSchema, value: unknown) -> (boolean?, { Issue }?),
     safeParse: (self: BooleanSchema, value: unknown) -> Result<boolean>,
     parse: (self: BooleanSchema, value: unknown) -> boolean,
-    isTrue: (self: BooleanSchema) -> BooleanSchema,
-    isFalse: (self: BooleanSchema) -> BooleanSchema,
     optional: (self: BooleanSchema) -> OptionalSchema<boolean>,
     default: (self: BooleanSchema, fallback: boolean) -> DefaultSchema<boolean>,
     defaultWith: (self: BooleanSchema, produce: () -> boolean) -> DefaultSchema<boolean>,
@@ -1105,32 +1103,6 @@ end
 
 --[=[
 	@within BooleanSchema
-	@tag Refinement
-	@return BooleanSchema
-
-	Requires the value to be `true`.
-]=]
-function BooleanSchema:isTrue(): BooleanSchema
-    return newBoolean(append(self._checks, function(value: boolean)
-        return if value ~= true then "expected true, got false" else nil
-    end))
-end
-
---[=[
-	@within BooleanSchema
-	@tag Refinement
-	@return BooleanSchema
-
-	Requires the value to be `false`.
-]=]
-function BooleanSchema:isFalse(): BooleanSchema
-    return newBoolean(append(self._checks, function(value: boolean)
-        return if value ~= false then "expected false, got true" else nil
-    end))
-end
-
---[=[
-	@within BooleanSchema
 	@tag Wrapper
 	@return OptionalSchema<boolean>
 
@@ -1179,6 +1151,166 @@ function BooleanSchema:defaultWith(produce: () -> boolean): DefaultSchema<boolea
     return newDefault(function(value)
         return inner:_validate(value)
     end, produce, false, nil, nil)
+end
+
+--[=[
+	@class LiteralSchema
+
+	Accepts exactly one value, compared with `==`. Use it where a field may only
+	hold a specific constant, and combine several through [ObjectSchema] fields
+	to describe a tagged shape.
+
+	```lua
+	local Consented = v.literal(true)
+	local Kind = v.literal("player")
+
+	Consented:parse(true)  --> true
+	Consented:parse(false) --> errors: expected true, got false
+	Kind:parse("npc")      --> errors: expected "player", got "npc"
+	```
+]=]
+export type LiteralSchema<T> = {
+    value: T,
+    isOptional: boolean,
+    _validate: (self: LiteralSchema<T>, value: unknown) -> (T?, { Issue }?),
+    safeParse: (self: LiteralSchema<T>, value: unknown) -> Result<T>,
+    parse: (self: LiteralSchema<T>, value: unknown) -> T,
+    optional: (self: LiteralSchema<T>) -> OptionalSchema<T>,
+    default: (self: LiteralSchema<T>, fallback: T) -> DefaultSchema<T>,
+    defaultWith: (self: LiteralSchema<T>, produce: () -> T) -> DefaultSchema<T>,
+}
+
+-- Quoted so that "1" and 1 do not read the same in an error message.
+local function showLiteral(value: unknown): string
+    if type(value) == "string" then
+        return `"{value}"`
+    end
+
+    return tostring(value)
+end
+
+local function newLiteral<T>(expected: T): LiteralSchema<T>
+    local self = {}
+    local this = (self :: any) :: LiteralSchema<T>
+
+    --[=[
+		@within LiteralSchema
+		@prop value T
+		@tag Reflection
+		@readonly
+
+		The one value this schema accepts.
+	]=]
+    self.value = expected
+
+    --[=[
+		@within LiteralSchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Always `false`.
+	]=]
+    self.isOptional = false
+
+    local function validate(value: unknown): (T?, { Issue }?)
+        if value ~= expected then
+            return nil, failure(`expected {showLiteral(expected)}, got {showLiteral(value)}`)
+        end
+
+        return expected, nil
+    end
+
+    self._validate = function(_self: any, value: unknown): (T?, { Issue }?)
+        return validate(value)
+    end
+
+    --[=[
+		@within LiteralSchema
+		@method safeParse
+		@tag Parsing
+		@param value unknown
+		@return Result<T>
+
+		Validates `value` without throwing.
+	]=]
+    function self:safeParse(value: unknown): Result<T>
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            return { success = false, issues = issues }
+        end
+
+        return { success = true, value = parsed :: T }
+    end
+
+    --[=[
+		@within LiteralSchema
+		@method parse
+		@tag Parsing
+		@param value unknown
+		@return T
+		@error "expected ..." -- Thrown when `value` is anything else
+
+		Validates `value` and returns it, throwing on failure.
+	]=]
+    function self:parse(value: unknown): T
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
+        end
+
+        return parsed :: T
+    end
+
+    --[=[
+		@within LiteralSchema
+		@method optional
+		@tag Wrapper
+		@return OptionalSchema<T>
+
+		Wraps this schema so that `nil` is also accepted.
+	]=]
+    function self:optional(): OptionalSchema<T>
+        return newOptional(function(value)
+            return this:_validate(value)
+        end, nil, nil)
+    end
+
+    --[=[
+		@within LiteralSchema
+		@method default
+		@tag Wrapper
+		@param fallback T -- Value used when parsing `nil`
+		@return DefaultSchema<T>
+
+		Wraps this schema so that `nil` yields `fallback` instead of failing.
+	]=]
+    function self:default(fallback: T): DefaultSchema<T>
+        return newDefault(function(value)
+            return this:_validate(value)
+        end, function()
+            return fallback
+        end, true, nil, nil)
+    end
+
+    --[=[
+		@within LiteralSchema
+		@method defaultWith
+		@tag Wrapper
+		@param produce () -> T -- Builds the value used when parsing `nil`
+		@return DefaultSchema<T>
+
+		Like `:default`, but calls `produce` on every parse.
+	]=]
+    function self:defaultWith(produce: () -> T): DefaultSchema<T>
+        return newDefault(function(value)
+            return this:_validate(value)
+        end, produce, false, nil, nil)
+    end
+
+    return this
 end
 
 --[=[
@@ -2072,6 +2204,29 @@ end
 ]=]
 function Vet.boolean(): BooleanSchema
     return newBoolean({})
+end
+
+--[=[
+	@within Vet
+	@tag Constructor
+	@param value T -- The only value the schema accepts
+	@return LiteralSchema<T>
+
+	Creates a schema that accepts exactly `value`, compared with `==`.
+
+	```lua
+	local Consented = v.literal(true)
+
+	Consented:parse(true)  --> true
+	Consented:parse(false) --> errors: expected true, got false
+	```
+
+	Luau widens a literal argument when it infers a generic, so the result is
+	typed `boolean` rather than `true`. Annotate the schema if you need the
+	singleton: `local Kind: LiteralSchema<"player"> = v.literal("player")`.
+]=]
+function Vet.literal<T>(value: T): LiteralSchema<T>
+    return newLiteral(value)
 end
 
 --[=[

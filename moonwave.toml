@@ -10,6 +10,7 @@ classOrder = [
 	"StringSchema",
 	"NumberSchema",
 	"BooleanSchema",
+	"LiteralSchema",
 	"ArraySchema",
 	"TupleSchema",
 	"ObjectSchema",
