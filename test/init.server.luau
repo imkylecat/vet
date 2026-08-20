@@ -95,6 +95,18 @@ local firstTags = Tags:parse(nil)
 table.insert(firstTags, "hi")
 assert(#Tags:parse(nil) == 0)
 
+local Waypoint = Vet.tuple({ Vet.string(), Vet.number():integer() })
+
+assert(Waypoint:parse({ "spawn", 3 })[2] == 3)
+assert(not Waypoint:safeParse({ "spawn", "3" }).success)
+assert(not Waypoint:safeParse({ "spawn" }).success)
+assert(not Waypoint:safeParse({ "spawn", 3, 4 }).success)
+
+-- A position that tolerates nil may be left off the end.
+local Ping = Vet.tuple({ Vet.string(), Vet.number():default(0) })
+
+assert(Ping:parse({ "hello" })[2] == 0)
+
 local SessionId = Vet.uuid({ version = "v7" })
 
 assert(SessionId:parse("01912d68-783e-7cc0-a2f0-5f8b1d3e9a7c") ~= nil)

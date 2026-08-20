@@ -981,6 +981,149 @@ local function newArray<T>(inner: (value: unknown) -> Result<T>, checks: { Lengt
 end
 
 --[=[
+	@class TupleSchema
+
+	Validates a fixed sequence where each position has its own schema. Use it
+	for packed argument lists and other positional payloads, where [ArraySchema]
+	would only let you say that every element is the same shape.
+
+	```lua
+	local Waypoint = v.tuple({ v.string(), v.number():integer() })
+
+	Waypoint:parse({ "spawn", 3 }) --> { "spawn", 3 }
+	Waypoint:parse({ "spawn" })    --> errors: [2]: expected number, got nil
+	Waypoint:parse({ "a", 1, 2 })  --> errors: expected a tuple of 2 values, got 3
+	```
+
+	A position whose schema is optional or has a default may be left off the
+	end, since Lua cannot tell a trailing `nil` from a shorter list:
+
+	```lua
+	local Ping = v.tuple({ v.string(), v.number():default(0) })
+
+	Ping:parse({ "hello" }) --> { "hello", 0 }
+	```
+]=]
+export type TupleSchema<T> = {
+    safeParse: (self: TupleSchema<T>, value: unknown) -> Result<{ T }>,
+    parse: (self: TupleSchema<T>, value: unknown) -> { T },
+    optional: (self: TupleSchema<T>) -> OptionalSchema<{ T }>,
+    default: (self: TupleSchema<T>, fallback: { T } | () -> { T }) -> DefaultSchema<{ T }>,
+}
+
+type Positions = { { safeParse: (any, unknown) -> Result<any> } }
+
+local function newTuple<T>(positions: Positions): TupleSchema<T>
+    local self = {}
+
+    --[=[
+		@within TupleSchema
+		@method safeParse
+		@tag Parsing
+		@param value unknown
+		@return Result<{ T }>
+
+		Validates each position against its own schema, reporting failures with
+		the index in the issue path.
+	]=]
+    function self:safeParse(value: unknown): Result<{ T }>
+        if type(value) ~= "table" then
+            return fail(`expected a tuple, got {typeof(value)}`)
+        end
+
+        local length = #value
+        local total = 0
+
+        for _ in value :: any do
+            total += 1
+        end
+
+        if total ~= length then
+            return fail(`expected a tuple, got a table with {total - length} non-array keys`)
+        end
+
+        if length > #positions then
+            return fail(`expected a tuple of {#positions} values, got {length}`)
+        end
+
+        local issues: { Issue } = {}
+        local parsed: { T } = table.create(#positions)
+
+        -- Positions past the end are parsed as nil, so an optional or defaulted
+        -- tail still succeeds while a required one reports the missing index.
+        for index, schema in positions do
+            local result = schema:safeParse((value :: any)[index])
+
+            if result.success then
+                parsed[index] = result.value
+            else
+                for _, issue in result.issues do
+                    table.insert(issues, { path = prependPath(index, issue.path), message = issue.message })
+                end
+            end
+        end
+
+        if #issues > 0 then
+            return { success = false, issues = issues }
+        end
+
+        return { success = true, value = parsed }
+    end
+
+    --[=[
+		@within TupleSchema
+		@method parse
+		@tag Parsing
+		@param value unknown
+		@return { T }
+		@error "expected ..." -- Thrown when `value` fails validation
+
+		Validates `value` and returns it, throwing on failure.
+	]=]
+    function self:parse(value: unknown): { T }
+        local result = self:safeParse(value)
+        if result.success then
+            return result.value
+        end
+
+        error(describe(result.issues), 2)
+    end
+
+    --[=[
+		@within TupleSchema
+		@method optional
+		@tag Wrapper
+		@return OptionalSchema<{ T }>
+
+		Wraps this schema so that `nil` is also accepted.
+	]=]
+    function self:optional(): OptionalSchema<{ T }>
+        return newOptional(function(value)
+            return self:safeParse(value)
+        end)
+    end
+
+    --[=[
+		@within TupleSchema
+		@method default
+		@tag Wrapper
+		@param fallback { T } | () -> { T } -- Value used when parsing `nil`
+		@return DefaultSchema<{ T }>
+
+		Wraps this schema so that `nil` yields `fallback` instead of failing.
+		Prefer passing a function, since a constant table would be shared by
+		every parse.
+	]=]
+    function self:default(fallback: { T } | () -> { T }): DefaultSchema<{ T }>
+        return newDefault(function(value)
+            return self:safeParse(value)
+        end, fallback)
+    end
+
+    return (self :: any) :: TupleSchema<T>
+end
+
+--[=[
 	@class ObjectSchema
 
 	Validates a table field by field. Fields absent from the shape are ignored
@@ -1343,6 +1486,31 @@ function Vet.array<S>(item: S): ArraySchema<infer<S>>
     return newArray(function(value)
         return schema:safeParse(value)
     end, {})
+end
+
+--[=[
+	@within Vet
+	@tag Constructor
+	@param positions { S } -- One schema per position, in order
+	@return TupleSchema<Vet.infer<S>>
+
+	Creates a schema that accepts a fixed sequence, checking each position
+	against its own schema.
+
+	```lua
+	local Waypoint = v.tuple({ v.string(), v.number():integer() })
+
+	Waypoint:parse({ "spawn", 3 }) --> { "spawn", 3 }
+	Waypoint:parse({ "spawn" })    --> errors: [2]: expected number, got nil
+	```
+
+	Luau infers a mixed array literal as a union of its element types, so the
+	positions are already merged by the time a type function can see them. The
+	result is therefore `{ string | number }` rather than a true positional
+	type — the runtime check is exact, the static type is not.
+]=]
+function Vet.tuple<S>(positions: { S }): TupleSchema<infer<S>>
+    return newTuple((positions :: any) :: Positions)
 end
 
 --[=[
