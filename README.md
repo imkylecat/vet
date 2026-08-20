@@ -83,14 +83,14 @@ declaration instead of you writing it twice.
 | Introspection | — | `shape`, `minimum`, `maximum`, `isOptional` |
 | Roblox datatypes | All of them | `color3`, `udim2` so far |
 | Instances | `instanceOf`, `instanceIsA`, `children` | — |
-| Unions, maps, patterns | `union`, `intersection`, `map`, `keys`, `values`, `match` | — |
+| Unions, maps, patterns | `union`, `intersection`, `map`, `keys`, `values`, `match` | `union` |
 | Requires the new type solver | No | Yes, for `v.infer` |
 
 ### When t is the better choice
 
 - **You want breadth today.** t covers every Roblox datatype, Instances, Enums,
-  maps, unions, intersections and string patterns. Vet covers none of the last
-  three yet.
+  maps, intersections and string patterns. Vet has `union`, but none of the
+  other three yet.
 - **You are checking function arguments.** `t.wrap` and `t.tuple` are built for
   it, and a predicate is the right shape when there is no value to hand back.
 - **You cannot enable the new type solver.** `v.infer` is a user-defined type

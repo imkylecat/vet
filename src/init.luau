@@ -2252,6 +2252,239 @@ local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutpu
 end
 
 --[=[
+	@class UnionSchema
+
+	Accepts a value that matches any one of several schemas. Options are tried
+	in order and the first that succeeds decides the result, so when two options
+	overlap the earlier one wins — put the narrower option first if you want it
+	to be the one that parses.
+
+	```lua
+	local Id = v.union({ v.string():min(1), v.number():integer() })
+
+	Id:parse("player_1") --> "player_1"
+	Id:parse(7)          --> 7
+	Id:parse(true)       --> errors
+	```
+
+	A tagged shape falls out of combining [LiteralSchema] with [ObjectSchema],
+	which is how a union of message kinds is usually written. Annotate each tag
+	as a singleton, since [Vet.literal] otherwise widens it to `string` and the
+	arms become indistinguishable to Luau:
+
+	```lua
+	local Join: v.LiteralSchema<"join"> = v.literal("join")
+	local Chat: v.LiteralSchema<"chat"> = v.literal("chat")
+
+	local Event = v.union({
+		v.object({ kind = Join, userId = v.number() }),
+		v.object({ kind = Chat, text = v.string() }),
+	})
+
+	local event = Event:parse(payload)
+
+	if event.kind == "chat" then
+		print(event.text) -- narrowed to the chat arm
+	end
+	```
+
+	Nothing matching is a failure of the union as a whole rather than of any one
+	option, so the issue sits at the union's own path and its message names each
+	option and why that option rejected the value.
+]=]
+export type UnionSchema<T> = {
+    options: { AnySchema<any> },
+    isOptional: boolean,
+    _validate: (self: UnionSchema<T>, value: unknown) -> (T?, { Issue }?),
+    safeParse: (self: UnionSchema<T>, value: unknown) -> Result<T>,
+    parse: (self: UnionSchema<T>, value: unknown) -> T,
+    optional: (self: UnionSchema<T>) -> OptionalSchema<T>,
+    default: (self: UnionSchema<T>, fallback: T) -> DefaultSchema<T>,
+    defaultWith: (self: UnionSchema<T>, produce: () -> T) -> DefaultSchema<T>,
+}
+
+local function newUnion<T>(options: { AnySchema<any> }): UnionSchema<T>
+    if #options == 0 then
+        error("expected at least one option", 3)
+    end
+
+    local self = {}
+    local this = (self :: any) :: UnionSchema<T>
+
+    --[=[
+		@within UnionSchema
+		@prop options { AnySchema<any> }
+		@tag Reflection
+		@readonly
+
+		The schemas this union was built from, in the order they are tried:
+
+		```lua
+		local Id = v.union({ v.string(), v.number() })
+
+		#Id.options             --> 2
+		Id.options[1]:parse("") --> ""
+		```
+
+		The table is a frozen copy of the one passed to [Vet.union], so mutating
+		it fails loudly rather than corrupting the schema.
+	]=]
+    local branches = table.freeze(table.clone(options))
+
+    self.options = branches
+
+    --[=[
+		@within UnionSchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		`true` when any option accepts `nil`, since then the union does too.
+		A [DefaultSchema] option does not count: it accepts a missing value but
+		fills one in, so the union still never produces `nil`.
+	]=]
+    local optional = false
+
+    for _, option in branches do
+        if (option :: any).isOptional then
+            optional = true
+            break
+        end
+    end
+
+    self.isOptional = optional
+
+    --[=[
+		@within UnionSchema
+		@method safeParse
+		@tag Parsing
+		@param value unknown
+		@return Result<T>
+
+		Tries each option in order and returns what the first match parsed to.
+		When none match, the single issue reports every option's rejection.
+	]=]
+    local function validate(value: unknown): (T?, { Issue }?)
+        -- Allocated only once an option has been rejected, so a value that the
+        -- first option accepts costs nothing here at all.
+        local reasons: { string }? = nil
+
+        for index, option in branches do
+            local parsed, issues = option:_validate(value)
+
+            -- Read from the issues rather than the value, so an option that
+            -- accepts nil still counts as the match it is.
+            if issues == nil then
+                return parsed :: T, nil
+            end
+
+            -- A union of one has nothing to choose between, so its rejection is
+            -- the option's own, paths and all.
+            if #branches == 1 then
+                return nil, issues
+            end
+
+            local reason = `option {index}: {describe(issues)}`
+
+            if reasons == nil then
+                reasons = { reason }
+            else
+                table.insert(reasons :: { string }, reason)
+            end
+        end
+
+        return nil, failure(`expected one of {#branches} options ({table.concat(reasons :: { string }, "; ")})`)
+    end
+
+    self._validate = function(_self: any, value: unknown): (T?, { Issue }?)
+        return validate(value)
+    end
+
+    function self:safeParse(value: unknown): Result<T>
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            return { success = false, issues = issues }
+        end
+
+        return { success = true, value = parsed :: T }
+    end
+
+    --[=[
+		@within UnionSchema
+		@method parse
+		@tag Parsing
+		@param value unknown
+		@return T
+		@error "expected one of ..." -- Thrown when no option accepts `value`
+
+		Validates `value` and returns it, throwing on failure.
+	]=]
+    function self:parse(value: unknown): T
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
+        end
+
+        return parsed :: T
+    end
+
+    --[=[
+		@within UnionSchema
+		@method optional
+		@tag Wrapper
+		@return OptionalSchema<T>
+
+		Wraps this schema so that `nil` is also accepted.
+	]=]
+    function self:optional(): OptionalSchema<T>
+        return newOptional(function(value)
+            return this:_validate(value)
+        end, nil, nil)
+    end
+
+    --[=[
+		@within UnionSchema
+		@method default
+		@tag Wrapper
+		@param fallback T -- Value used when parsing `nil`
+		@return DefaultSchema<T>
+
+		Wraps this schema so that `nil` yields `fallback` instead of failing.
+		Prefer passing a function when the fallback is a table, since a constant
+		one would be shared by every parse.
+	]=]
+    function self:default(fallback: T): DefaultSchema<T>
+        return newDefault(function(value)
+            return this:_validate(value)
+        end, function()
+            return fallback
+        end, true, nil, nil)
+    end
+
+    --[=[
+		@within UnionSchema
+		@method defaultWith
+		@tag Wrapper
+		@param produce () -> T -- Builds the value used when parsing `nil`
+		@return DefaultSchema<T>
+
+		Like `:default`, but calls `produce` on every parse instead of reusing
+		one value.
+
+		The produced value is validated each time.
+	]=]
+    function self:defaultWith(produce: () -> T): DefaultSchema<T>
+        return newDefault(function(value)
+            return this:_validate(value)
+        end, produce, false, nil, nil)
+    end
+
+    return this
+end
+
+--[=[
 	@type UuidVersion "v4" | "v5" | "v6" | "v7" | "v8"
 	@within Vet
 
@@ -2571,6 +2804,38 @@ end
 ]=]
 function Vet.object<S>(shape: S): ObjectSchema<objectOutput<S>, S>
     return newObject(shape, false)
+end
+
+--[=[
+	@within Vet
+	@tag Constructor
+	@param options { S } -- Schemas to try, in order
+	@return UnionSchema<Vet.infer<S>>
+	@error "expected at least one option" -- Thrown when `options` is empty
+
+	Creates a schema that accepts a value matching any one of `options`, trying
+	them in order and keeping what the first match parsed to.
+
+	```lua
+	local Id = v.union({ v.string():min(1), v.number():integer() })
+
+	type Id = v.infer<typeof(Id)> --> string | number
+
+	Id:parse("player_1") --> "player_1"
+	Id:parse(7)          --> 7
+	Id:parse(1.5)        --> errors: expected one of 2 options
+	                     --  (option 1: expected string, got number;
+	                     --   option 2: expected an integer, got 1.5)
+	```
+
+	Luau infers a mixed array literal as a union of its element types, which is
+	exactly what a union needs, so the inferred output is the union of what each
+	option parses to.
+]=]
+function Vet.union<S>(options: { S }): UnionSchema<infer<S>>
+    -- newUnion cannot bind its output type from an erased option list, so the
+    -- result is named here instead.
+    return (newUnion(options :: any) :: any) :: UnionSchema<infer<S>>
 end
 
 return Vet

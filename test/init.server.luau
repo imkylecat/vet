@@ -160,6 +160,86 @@ local Ping = Vet.tuple({ Vet.string(), Vet.number():default(0) })
 
 assert(Ping:parse({ "hello" })[2] == 0)
 
+local Id = Vet.union({ Vet.string():min(1), Vet.number():integer() })
+
+assert(Id:parse("player_1") == "player_1")
+assert(Id:parse(7) == 7)
+assert(not Id:safeParse(true).success)
+assert(not Id:safeParse(1.5).success)
+assert(not Id:safeParse("").success)
+
+-- Nothing matching is one failure of the union, not one per option, and the
+-- message says what each option made of the value.
+local unmatched = Id:safeParse(1.5)
+
+assert(not unmatched.success)
+
+if not unmatched.success then
+    assert(#unmatched.issues == 1)
+    assert(#unmatched.issues[1].path == 0)
+    assert(string.find(unmatched.issues[1].message, "expected an integer, got 1.5", 1, true) ~= nil)
+end
+
+-- Options are tried in order, so the wider one wins when both accept.
+assert(Vet.union({ Vet.number(), Vet.number():integer() }):parse(2) == 2)
+
+-- Reflection reaches the options, and the copy is frozen like a shape.
+assert(#Id.options == 2)
+assert(Id.options[1]:parse("hi") == "hi")
+assert(table.isfrozen(Id.options))
+assert(Id.isOptional == false)
+assert(Vet.union({ Vet.string():optional(), Vet.number() }).isOptional)
+-- A default option accepts nil but fills it in, so the union is not optional.
+assert(not Vet.union({ Vet.string():default("x"), Vet.number() }).isOptional)
+assert(Vet.union({ Vet.number(), Vet.string():default("x") }):parse(nil) == "x")
+
+-- An empty union has nothing that could ever match. The annotation is only
+-- there to give infer a schema to read; the list is still empty.
+assert(not pcall(function()
+    return Vet.union({} :: { Vet.StringSchema })
+end))
+
+-- Literals and objects compose into a tagged union. Annotating each tag as a
+-- singleton is what lets Luau tell the arms apart after parsing.
+local Join: Vet.LiteralSchema<"join"> = Vet.literal("join")
+local Chat: Vet.LiteralSchema<"chat"> = Vet.literal("chat")
+
+local Event = Vet.union({
+    Vet.object({ kind = Join, userId = Vet.number() }),
+    Vet.object({ kind = Chat, text = Vet.string() }),
+})
+
+local chatted = Event:parse({ kind = "chat", text = "hi" })
+
+assert(chatted.kind == "chat")
+
+if chatted.kind == "chat" then
+    assert(chatted.text == "hi")
+end
+
+assert(not Event:safeParse({ kind = "chat", userId = 1 }).success)
+assert(not Event:safeParse({ kind = "leave" }).success)
+
+-- Nested, the issue sits at the union itself rather than inside an option.
+local Payload = Vet.object({ id = Id })
+local badPayload = Payload:safeParse({ id = false })
+
+assert(not badPayload.success)
+
+if not badPayload.success then
+    assert(badPayload.issues[1].path[1] == "id")
+    assert(#badPayload.issues[1].path == 1)
+end
+
+assert(#Vet.array(Id):parse({ "a", 2, "c" }) == 3)
+assert(not Vet.array(Id):safeParse({ "a", true }).success)
+
+assert(Id:optional():parse(nil) == nil)
+assert(Id:default(0):parse(nil) == 0)
+assert(not pcall(function()
+    return Id:default(1.5)
+end))
+
 local SessionId = Vet.uuid({ version = "v7" })
 
 assert(SessionId:parse("01912d68-783e-7cc0-a2f0-5f8b1d3e9a7c") ~= nil)
@@ -208,6 +288,14 @@ type InferredEither = Vet.infer<typeof(Username) | typeof(Level)>
 local either: InferredEither = Level:parse(7)
 assert(typeof(either) == "number")
 
+-- A union schema infers to the union of what its options parse to.
+type InferredId = Vet.infer<typeof(Id)>
+
+local identifier: InferredId = Id:parse(7)
+local asEither: string | number = identifier
+
+assert(asEither == 7)
+
 -- Arrays infer to a list, objects to a record built from the shape.
 type InferredScores = Vet.infer<typeof(Scores)>
 type InferredUser = Vet.infer<typeof(User)>
@@ -238,6 +326,7 @@ assert(settingsVolume == 0.5)
 -- local notOptional: string = nickname
 -- local notAString: string = user.level
 -- local notRequired: string = user.nickname
+-- local notEither: string = identifier
 
 local result = Username:safeParse("k")
 if not result.success then
