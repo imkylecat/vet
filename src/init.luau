@@ -5,7 +5,7 @@
 
 	Lua-first schema validation with type inference.
 
-	```luau
+	```lua
 	local Vet = require(ReplicatedStorage.Packages.Vet)
 
 	local Name = Vet.string():min(3):max(22)
@@ -42,7 +42,7 @@ export type Result<T> = { success: true, value: T } | { success: false, issues: 
 	Extracts the type a schema parses to, so a schema can be the single source
 	of truth for both validation and types.
 
-	```luau
+	```lua
 	local Username = Vet.string():min(3)
 	type Username = Vet.infer<typeof(Username)> --> string
 
@@ -252,7 +252,7 @@ end
 	calling `:optional()` on any schema, which comes last in a chain so that the
 	refinements before it still apply to non-nil values.
 
-	```luau
+	```lua
 	local Nickname = Vet.string():max(20):optional()
 
 	Nickname:parse(nil)        --> nil
@@ -326,7 +326,7 @@ end
 	Validates strings. Every refinement returns a new schema, so a base schema
 	can be shared and specialised without being modified.
 
-	```luau
+	```lua
 	local Base = Vet.string()
 	local Username = Base:min(3):max(22)
 	```
@@ -440,7 +440,7 @@ end
 
 	Validates numbers. NaN is rejected before any refinement runs.
 
-	```luau
+	```lua
 	local Level = Vet.number():integer():min(1):max(100)
 	```
 ]=]
@@ -557,7 +557,7 @@ end
 	Validates booleans. Truthy values that are not booleans, such as `1` or
 	`"true"`, are rejected.
 
-	```luau
+	```lua
 	local Enabled = Vet.boolean()
 	```
 ]=]
@@ -654,7 +654,7 @@ end
 	Validates a contiguous array where every element matches one inner schema.
 	Tables carrying non-array keys are rejected outright.
 
-	```luau
+	```lua
 	local Scores = Vet.array(Vet.number():integer()):max(4)
 	```
 ]=]
@@ -796,7 +796,7 @@ end
 	unless the schema is made [ObjectSchema:strict], and the original table is
 	returned rather than a copy.
 
-	```luau
+	```lua
 	local User = Vet.object({
 		name = Vet.string():min(3),
 		level = Vet.number():integer(),
@@ -938,7 +938,7 @@ end
 
 	Creates a schema that accepts an array of `item`.
 
-	```luau
+	```lua
 	local Scores = Vet.array(Vet.number():integer())
 
 	Scores:parse({ 1, 2, 3 }) --> { 1, 2, 3 }
@@ -961,7 +961,7 @@ end
 	Creates a schema that validates a table field by field. The field types come
 	from the shape, so the schema is the only place they are declared.
 
-	```luau
+	```lua
 	local User = Vet.object({
 		name = Vet.string():min(3),
 		nickname = Vet.string():optional(),

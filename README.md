@@ -2,7 +2,7 @@
 
 Lua-first schema validation with type inference
 
-```luau
+```lua
 local Vet = require(ReplicatedStorage.Packages.Vet)
 
 local Username = Vet.string():min(3):max(22)
