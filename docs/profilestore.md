@@ -4,10 +4,35 @@ sidebar_position: 2
 
 # Using Vet with ProfileStore
 
-[ProfileStore](https://madstudioroblox.github.io/ProfileStore/) needs a profile
-template — the data a brand new player starts with. A Vet schema already
-describes that, so you can write the shape once and get the template, the
-validation, and the Luau type from it.
+[ProfileStore](https://madstudioroblox.github.io/ProfileStore/) saves whatever
+you put in `Profile.Data`. It does not care what that is, and it will happily
+persist a `Money` of `-2000000`, a `Level` that is a string, or a field your
+code stopped writing two updates ago.
+
+A Vet schema gives you one description of the shape that serves as the profile
+template, the runtime check, and the Luau type — and catches the values
+ProfileStore cannot.
+
+## What goes wrong without it
+
+**Your saved data outlives your code.** Every profile in your DataStore was
+written by some past version of your game. Change a rule today and yesterday's
+data does not change with it. Cap `Money` at 100,000 and the player who banked
+five million during a broken promo still has five million.
+
+**Bad data is sticky.** Once a wrong value is in `Profile.Data` it saves again
+on the next autosave, and the one after that. The gap between writing it and
+noticing it is the difference between one confused player and a support
+backlog.
+
+**`Reconcile` does not look at values.** It copies keys the template has and the
+save is missing. That is all. A `Level` of `-4`, a `Tagline` holding a table, a
+number where you expected a string — all reconcile cleanly and load without a
+word.
+
+**Three places drift apart.** Without a schema you write the template literal,
+then the Luau type, then whatever ad-hoc checks you sprinkle around. Nothing
+keeps them in agreement, and the disagreement shows up as corrupt saves.
 
 ## The schema is the template
 
@@ -122,6 +147,10 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 ```
 
+Kicking is the blunt option. Refusing to load is often the right call, because
+a session that starts on bad data will save that data back — but see
+[what to do about it](#deciding-what-to-do) for the alternatives.
+
 ## Reconcile fills, Vet verifies
 
 The two do different jobs and you want both:
@@ -129,8 +158,8 @@ The two do different jobs and you want both:
 - `profile:Reconcile()` copies keys the template has and the saved profile is
   missing. It does not look at the values.
 - `ProfileSchema:safeParse(profile.Data)` checks the values. A `Money` of `-5`,
-  a `Level` of `9999`, or a `Tagline` someone injected through an exploit are
-  all caught here and nowhere else.
+  a `Level` of `9999`, or a `Tagline` that ended up holding a table are all
+  caught here and nowhere else.
 
 Validate **after** reconciling, so a profile saved before you added a field is
 not reported as invalid for missing it.
@@ -149,6 +178,76 @@ if result.value ~= profile.Data then
     warn("profile template is out of sync with the schema")
 end
 ```
+
+## Catching bad writes before they save
+
+Validating on load catches data that was already wrong. The more valuable check
+is on the way out, because that is where **your own code** puts bad values in.
+
+Exploiters cannot touch `Profile.Data` — it only exists on the server. Every
+wrong value in it was written by a line you wrote: an unchecked remote argument
+stored straight into the profile, a subtraction that went negative, a reward
+multiplied by an empty variable. `Profile.OnSave` fires immediately before each
+autosave, so it is the last point where you can notice:
+
+```lua
+profile.OnSave:Connect(function()
+    local result = ProfileSchema:safeParse(profile.Data)
+
+    if result.success then
+        return
+    end
+
+    for _, issue in result.issues do
+        warn(`{player.UserId} writing invalid {issue.path[1]}: {issue.message}`)
+    end
+end)
+```
+
+This turns "a player emails you in three weeks" into a warning in your logs the
+first time it happens, with the field name and what was wrong with it.
+
+:::caution
+
+`OnSave` must not yield. `safeParse` does not, but do not add a `task.wait` or a
+`:WaitForChild` next to it — ProfileStore only guarantees that changes made at
+the moment `OnSave` fires are included in that save.
+
+:::
+
+You cannot cancel a save from `OnSave`. You can, however, repair the value
+before it goes out, since changes made during the callback are included:
+
+```lua
+profile.OnSave:Connect(function()
+    local result = ProfileSchema:safeParse(profile.Data)
+
+    if not result.success then
+        warn(`{player.UserId} profile repaired before save`)
+        profile.Data.Money = math.clamp(profile.Data.Money, 0, 100000)
+    end
+end)
+```
+
+Prefer logging while you are still finding bugs. Silent repair keeps players
+playing, but it also hides the bug that caused the bad value.
+
+## Deciding what to do
+
+Loading an invalid profile leaves you three choices, and the right one depends
+on what failed:
+
+- **Refuse the session.** End it and kick. Correct when the data is unusable and
+  starting anyway would save the damage back.
+- **Repair and continue.** Clamp the field, or overwrite it from the template.
+  Correct for values that are merely out of range, where a slightly wrong
+  number beats locking someone out of their account.
+- **Load anyway and report.** Correct while you are still learning which rules
+  are too strict. A schema tightened in the wrong place should not lock out a
+  thousand players before you notice.
+
+Whichever you choose, `issue.path` tells you which field failed, so you can
+branch on it rather than treating every failure the same.
 
 ## Adding a field later
 
@@ -180,3 +279,6 @@ type ProfileData = v.infer<typeof(ProfileSchema)>
 `Tagline` is `string?` because it is optional, while `Level` and `Money` are
 plain `number` — a field with a default is always present after parsing, so
 there is nothing to check for at the call site.
+
+That is the whole argument in one line: the shape is written once, and the
+template, the runtime check, and the type all come from it.
