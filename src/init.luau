@@ -1154,6 +1154,138 @@ function BooleanSchema:defaultWith(produce: () -> boolean): DefaultSchema<boolea
 end
 
 --[=[
+	@class Color3Schema
+
+	Validates a `Color3`. The check is on the datatype itself, so a table that
+	merely carries `R`, `G` and `B` fields is rejected — useful when the value
+	arrived over a remote, where anything can be sent.
+
+	```lua
+	local Tint = v.color3()
+
+	Tint:parse(Color3.new(1, 0, 0))     --> Color3(1, 0, 0)
+	Tint:parse({ R = 1, G = 0, B = 0 }) --> errors: expected Color3, got table
+	```
+]=]
+type Color3Impl = {
+    __index: Color3Impl,
+    _validate: (self: Color3Schema, value: unknown) -> (Color3?, { Issue }?),
+    safeParse: (self: Color3Schema, value: unknown) -> Result<Color3>,
+    parse: (self: Color3Schema, value: unknown) -> Color3,
+    optional: (self: Color3Schema) -> OptionalSchema<Color3>,
+    default: (self: Color3Schema, fallback: Color3) -> DefaultSchema<Color3>,
+    defaultWith: (self: Color3Schema, produce: () -> Color3) -> DefaultSchema<Color3>,
+}
+
+export type Color3Schema = typeof(setmetatable({} :: { isOptional: boolean }, {} :: Color3Impl))
+
+local Color3Schema = {} :: Color3Impl
+Color3Schema.__index = Color3Schema
+
+--[=[
+	@within Color3Schema
+	@prop isOptional boolean
+	@tag Reflection
+	@readonly
+
+	Always `false`. Colours carry no `minimum` or `maximum`.
+]=]
+
+--[=[
+	@within Color3Schema
+	@tag Parsing
+	@param value unknown
+	@return Result<Color3>
+
+	Validates `value` without throwing.
+]=]
+function Color3Schema:_validate(value: unknown): (Color3?, { Issue }?)
+    if typeof(value) ~= "Color3" then
+        return nil, failure(`expected Color3, got {typeof(value)}`)
+    end
+
+    return value, nil
+end
+
+function Color3Schema:safeParse(value: unknown): Result<Color3>
+    local parsed, issues = self:_validate(value)
+
+    if issues ~= nil then
+        return { success = false, issues = issues }
+    end
+
+    return { success = true, value = parsed :: Color3 }
+end
+
+--[=[
+	@within Color3Schema
+	@tag Parsing
+	@param value unknown
+	@return Color3
+	@error "expected Color3, got ..." -- Thrown when `value` is not a Color3
+
+	Validates `value` and returns it, throwing on failure.
+]=]
+function Color3Schema:parse(value: unknown): Color3
+    local parsed, issues = self:_validate(value)
+
+    if issues ~= nil then
+        error(describe(issues), 2)
+    end
+
+    return parsed :: Color3
+end
+
+--[=[
+	@within Color3Schema
+	@tag Wrapper
+	@return OptionalSchema<Color3>
+
+	Wraps this schema so that `nil` is also accepted.
+]=]
+function Color3Schema:optional(): OptionalSchema<Color3>
+    local inner = self
+    return newOptional(function(value)
+        return inner:_validate(value)
+    end, nil, nil)
+end
+
+--[=[
+	@within Color3Schema
+	@tag Wrapper
+	@param fallback Color3 -- Value used when parsing `nil`
+	@return DefaultSchema<Color3>
+
+	Wraps this schema so that `nil` yields `fallback` instead of failing.
+]=]
+function Color3Schema:default(fallback: Color3): DefaultSchema<Color3>
+    local inner = self
+    return newDefault(function(value)
+        return inner:_validate(value)
+    end, function()
+        return fallback
+    end, true, nil, nil)
+end
+
+--[=[
+	@within Color3Schema
+	@tag Wrapper
+	@param produce () -> Color3 -- Builds the value used when parsing `nil`
+	@return DefaultSchema<Color3>
+
+	Like [Color3Schema:default], but calls `produce` on every parse.
+]=]
+function Color3Schema:defaultWith(produce: () -> Color3): DefaultSchema<Color3>
+    local inner = self
+    return newDefault(function(value)
+        return inner:_validate(value)
+    end, produce, false, nil, nil)
+end
+
+-- The schema carries no state, so every caller can share one frozen instance.
+local COLOR3 = (table.freeze(setmetatable({ isOptional = false }, Color3Schema)) :: any) :: Color3Schema
+
+--[=[
 	@class LiteralSchema
 
 	Accepts exactly one value, compared with `==`. Use it where a field may only
@@ -2209,6 +2341,26 @@ end
 --[=[
 	@within Vet
 	@tag Constructor
+	@return Color3Schema
+
+	Creates a schema that accepts a `Color3`.
+
+	```lua
+	local Tint = v.color3()
+
+	Tint:parse(Color3.fromRGB(255, 0, 0)) --> Color3(1, 0, 0)
+	Tint:parse({ R = 1, G = 0, B = 0 })   --> errors: expected Color3, got table
+	```
+
+	The schema holds no state, so every call returns the same frozen instance.
+]=]
+function Vet.color3(): Color3Schema
+    return COLOR3
+end
+
+--[=[
+	@within Vet
+	@tag Constructor
 	@param value T -- The only value the schema accepts
 	@return LiteralSchema<T>
 
@@ -2328,7 +2480,9 @@ end
 	type — the runtime check is exact, the static type is not.
 ]=]
 function Vet.tuple<S>(positions: { S }): TupleSchema<infer<S>>
-    return newTuple(positions :: { AnySchema<infer<S>> })
+    -- newTuple cannot bind its element type from an erased position list, so
+    -- the result is named here instead.
+    return (newTuple(positions :: any) :: any) :: TupleSchema<infer<S>>
 end
 
 --[=[

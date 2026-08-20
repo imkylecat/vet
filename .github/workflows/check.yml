@@ -26,17 +26,20 @@ jobs:
       # from this code, and it segfaults on exit after printing them. Read the
       # output to catch regressions; flip to blocking once luau-lsp handles
       # type function bodies cleanly.
+      # Roblox definitions are required: Vet.color3 names the Color3 datatype.
+      - name: Fetch Roblox type definitions
+        run: curl -sSL -o globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.luau
+
       - name: Analyze
         continue-on-error: true
-        run: luau-lsp analyze --base-luaurc=.luaurc --platform=standard --flag:LuauSolverV2=true src
+        run: luau-lsp analyze --definitions=globalTypes.d.luau --base-luaurc=.luaurc --platform=roblox --flag:LuauSolverV2=true src
 
       # The test doubles as a type-level test of Vet.infer, so it is worth
-      # analyzing with Rojo resolution and the Roblox API surface loaded.
-      # Also not blocking: the default solver cannot evaluate type functions,
-      # so every Vet.infer annotation reads as an unknown type.
+      # analyzing with Rojo resolution too. Also not blocking: the default
+      # solver cannot evaluate type functions, so every Vet.infer annotation
+      # reads as an unknown type.
       - name: Analyze tests
         continue-on-error: true
         run: |
-          curl -sSL -o globalTypes.d.luau https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/main/scripts/globalTypes.d.luau
           rojo sourcemap dev.project.json --output sourcemap.json
           luau-lsp analyze --sourcemap=sourcemap.json --definitions=globalTypes.d.luau --base-luaurc=.luaurc --platform=roblox test

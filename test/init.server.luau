@@ -29,6 +29,16 @@ assert(not Consented:safeParse("true").success)
 assert(not Consented:safeParse(nil).success)
 assert(Consented:optional():safeParse(nil).success)
 
+-- Colours are checked as a datatype, so a lookalike table does not pass.
+local Tint = Vet.color3()
+local red = Color3.new(1, 0, 0)
+
+assert(Tint:parse(red) == red)
+assert(not Tint:safeParse({ R = 1, G = 0, B = 0 }).success)
+assert(not Tint:safeParse(Vector3.new(1, 0, 0)).success)
+assert(Tint:optional():safeParse(nil).success)
+assert(Vet.color3() == Vet.color3())
+
 local Kind = Vet.literal("player")
 
 assert(Kind:parse("player") == "player")
