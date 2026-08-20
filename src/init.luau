@@ -207,27 +207,35 @@ end
 export type AnySchema<T> = {
     parse: (self: any, value: unknown) -> T,
     safeParse: (self: any, value: unknown) -> Result<T>,
+    _validate: (self: any, value: unknown) -> (T?, { Issue }?),
 }
 
-local function fail(message: string): Failure
-    return { success = false, issues = { { path = {} :: { string | number }, message = message } } }
-end
+-- Shared by every issue that failed at the top level. Frozen because issues are
+-- handed to callers, and because prependPath copies rather than mutating.
+local EMPTY_PATH: { string | number } = table.freeze({} :: { string | number })
 
-local function run<T>(value: T, checks: { Check<T> }): Result<T>
-    local issues: { Issue } = {}
+local function runChecks<T>(value: T, checks: { Check<T> }): { Issue }?
+    -- Allocated only once something fails, so a passing parse allocates nothing
+    -- here at all.
+    local issues: { Issue }? = nil
 
     for _, check in checks do
         local message = check(value)
-        if message then
-            table.insert(issues, { path = {} :: { string | number }, message = message })
+
+        if message ~= nil then
+            if issues == nil then
+                issues = { { path = EMPTY_PATH, message = message } }
+            else
+                table.insert(issues :: { Issue }, { path = EMPTY_PATH, message = message })
+            end
         end
     end
 
-    if #issues > 0 then
-        return { success = false, issues = issues }
-    end
+    return issues
+end
 
-    return { success = true, value = value }
+local function failure(message: string): { Issue }
+    return { { path = EMPTY_PATH, message = message } }
 end
 
 local function prependPath(key: string | number, path: { string | number }): { string | number }
@@ -285,12 +293,17 @@ export type OptionalSchema<T> = {
     minimum: number?,
     maximum: number?,
     isOptional: boolean,
+    _validate: (self: OptionalSchema<T>, value: unknown) -> (T?, { Issue }?),
     safeParse: (self: OptionalSchema<T>, value: unknown) -> Result<T?>,
     parse: (self: OptionalSchema<T>, value: unknown) -> T?,
     optional: (self: OptionalSchema<T>) -> OptionalSchema<T>,
 }
 
-local function newOptional<T>(inner: (value: unknown) -> Result<T>, minimum: number?, maximum: number?): OptionalSchema<T>
+local function newOptional<T>(
+    inner: (value: unknown) -> (T?, { Issue }?),
+    minimum: number?,
+    maximum: number?
+): OptionalSchema<T>
     local self = {}
     local this = (self :: any) :: OptionalSchema<T>
 
@@ -335,17 +348,30 @@ local function newOptional<T>(inner: (value: unknown) -> Result<T>, minimum: num
 		Succeeds with `nil` when `value` is `nil`, and otherwise defers to the
 		wrapped schema.
 	]=]
+    local function validate(value: unknown): (T?, { Issue }?)
+        if value == nil then
+            return nil, nil
+        end
+
+        return inner(value)
+    end
+
+    self._validate = function(_self: any, value: unknown): (T?, { Issue }?)
+        return validate(value)
+    end
+
     function self:safeParse(value: unknown): Result<T?>
         if value == nil then
             return { success = true, value = nil }
         end
 
-        local result = inner(value)
-        if result.success then
-            return { success = true, value = result.value }
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            return { success = false, issues = issues }
         end
 
-        return { success = false, issues = result.issues }
+        return { success = true, value = parsed }
     end
 
     --[=[
@@ -359,12 +385,13 @@ local function newOptional<T>(inner: (value: unknown) -> Result<T>, minimum: num
 		Validates `value` and returns it, throwing on failure.
 	]=]
     function self:parse(value: unknown): T?
-        local result = self:safeParse(value)
-        if result.success then
-            return result.value
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
         end
 
-        error(describe(result.issues), 2)
+        return parsed
     end
 
     --[=[
@@ -410,12 +437,13 @@ export type DefaultSchema<T> = {
     minimum: number?,
     maximum: number?,
     isOptional: boolean,
+    _validate: (self: DefaultSchema<T>, value: unknown) -> (T?, { Issue }?),
     safeParse: (self: DefaultSchema<T>, value: unknown) -> Result<T>,
     parse: (self: DefaultSchema<T>, value: unknown) -> T,
 }
 
 local function newDefault<T>(
-    inner: (value: unknown) -> Result<T>,
+    inner: (value: unknown) -> (T?, { Issue }?),
     produce: () -> T,
     validateOnce: boolean,
     minimum: number?,
@@ -460,13 +488,13 @@ local function newDefault<T>(
     if validateOnce then
         -- Validate a constant fallback up front, so a mistake surfaces where
         -- the schema is written rather than on some later parse of nil.
-        local result = inner(produce())
+        local parsed, issues = inner(produce())
 
-        if not result.success then
-            error(`default value is invalid: {describe(result.issues)}`, 3)
+        if issues ~= nil then
+            error(`default value is invalid: {describe(issues)}`, 3)
         end
 
-        constant = result.value
+        constant = parsed :: T
     end
 
     --[=[
@@ -479,10 +507,10 @@ local function newDefault<T>(
 		Returns the fallback when `value` is `nil`, and otherwise defers to the
 		wrapped schema. A fallback built by a function is validated too.
 	]=]
-    function self:safeParse(value: unknown): Result<T>
+    local function validate(value: unknown): (T?, { Issue }?)
         if value == nil then
             if validateOnce then
-                return { success = true, value = constant }
+                return constant, nil
             end
 
             -- Built fresh each time, so it is validated each time.
@@ -490,6 +518,24 @@ local function newDefault<T>(
         end
 
         return inner(value)
+    end
+
+    self._validate = function(_self: any, value: unknown): (T?, { Issue }?)
+        return validate(value)
+    end
+
+    function self:safeParse(value: unknown): Result<T>
+        if value == nil and validateOnce then
+            return { success = true, value = constant }
+        end
+
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            return { success = false, issues = issues }
+        end
+
+        return { success = true, value = parsed :: T }
     end
 
     --[=[
@@ -503,12 +549,13 @@ local function newDefault<T>(
 		Validates `value` and returns it, throwing on failure.
 	]=]
     function self:parse(value: unknown): T
-        local result = self:safeParse(value)
-        if result.success then
-            return result.value
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
         end
 
-        error(describe(result.issues), 2)
+        return parsed :: T
     end
 
     return this
@@ -527,6 +574,7 @@ end
 ]=]
 type StringImpl = {
     __index: StringImpl,
+    _validate: (self: StringSchema, value: unknown) -> (string?, { Issue }?),
     safeParse: (self: StringSchema, value: unknown) -> Result<string>,
     parse: (self: StringSchema, value: unknown) -> string,
     min: (self: StringSchema, n: number) -> StringSchema,
@@ -597,12 +645,21 @@ end
 	Validates `value` without throwing. All refinements run, so the returned
 	issues describe every failure rather than only the first.
 ]=]
-function StringSchema:safeParse(value: unknown): Result<string>
+function StringSchema:_validate(value: unknown): (string?, { Issue }?)
     if type(value) ~= "string" then
-        return fail(`expected string, got {typeof(value)}`)
+        return nil, failure(`expected string, got {typeof(value)}`)
+    end
+    return value, runChecks(value, self._checks)
+end
+
+function StringSchema:safeParse(value: unknown): Result<string>
+    local parsed, issues = self:_validate(value)
+
+    if issues ~= nil then
+        return { success = false, issues = issues }
     end
 
-    return run(value, self._checks)
+    return { success = true, value = parsed :: string }
 end
 
 --[=[
@@ -615,12 +672,13 @@ end
 	Validates `value` and returns it, throwing on failure.
 ]=]
 function StringSchema:parse(value: unknown): string
-    local result = self:safeParse(value)
-    if result.success then
-        return result.value
+    local parsed, issues = self:_validate(value)
+
+    if issues ~= nil then
+        error(describe(issues), 2)
     end
 
-    error(describe(result.issues), 2)
+    return parsed :: string
 end
 
 --[=[
@@ -687,7 +745,7 @@ end
 function StringSchema:optional(): OptionalSchema<string>
     local inner = self
     return newOptional(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, self.minimum, self.maximum)
 end
 
@@ -702,7 +760,7 @@ end
 function StringSchema:default(fallback: string): DefaultSchema<string>
     local inner = self
     return newDefault(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, function()
         return fallback
     end, true, self.minimum, self.maximum)
@@ -725,7 +783,7 @@ end
 function StringSchema:defaultWith(produce: () -> string): DefaultSchema<string>
     local inner = self
     return newDefault(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, produce, false, self.minimum, self.maximum)
 end
 
@@ -740,6 +798,7 @@ end
 ]=]
 type NumberImpl = {
     __index: NumberImpl,
+    _validate: (self: NumberSchema, value: unknown) -> (number?, { Issue }?),
     safeParse: (self: NumberSchema, value: unknown) -> Result<number>,
     parse: (self: NumberSchema, value: unknown) -> number,
     min: (self: NumberSchema, n: number) -> NumberSchema,
@@ -809,16 +868,25 @@ end
 	Validates `value` without throwing. All refinements run, so the returned
 	issues describe every failure rather than only the first.
 ]=]
-function NumberSchema:safeParse(value: unknown): Result<number>
+function NumberSchema:_validate(value: unknown): (number?, { Issue }?)
     if type(value) ~= "number" then
-        return fail(`expected number, got {typeof(value)}`)
+        return nil, failure(`expected number, got {typeof(value)}`)
     end
 
     if value ~= value then
-        return fail("expected number, got nan")
+        return nil, failure("expected number, got nan")
+    end
+    return value, runChecks(value, self._checks)
+end
+
+function NumberSchema:safeParse(value: unknown): Result<number>
+    local parsed, issues = self:_validate(value)
+
+    if issues ~= nil then
+        return { success = false, issues = issues }
     end
 
-    return run(value, self._checks)
+    return { success = true, value = parsed :: number }
 end
 
 --[=[
@@ -831,12 +899,13 @@ end
 	Validates `value` and returns it, throwing on failure.
 ]=]
 function NumberSchema:parse(value: unknown): number
-    local result = self:safeParse(value)
-    if result.success then
-        return result.value
+    local parsed, issues = self:_validate(value)
+
+    if issues ~= nil then
+        error(describe(issues), 2)
     end
 
-    error(describe(result.issues), 2)
+    return parsed :: number
 end
 
 --[=[
@@ -902,7 +971,7 @@ end
 function NumberSchema:optional(): OptionalSchema<number>
     local inner = self
     return newOptional(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, self.minimum, self.maximum)
 end
 
@@ -917,7 +986,7 @@ end
 function NumberSchema:default(fallback: number): DefaultSchema<number>
     local inner = self
     return newDefault(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, function()
         return fallback
     end, true, self.minimum, self.maximum)
@@ -940,7 +1009,7 @@ end
 function NumberSchema:defaultWith(produce: () -> number): DefaultSchema<number>
     local inner = self
     return newDefault(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, produce, false, self.minimum, self.maximum)
 end
 
@@ -956,6 +1025,7 @@ end
 ]=]
 type BooleanImpl = {
     __index: BooleanImpl,
+    _validate: (self: BooleanSchema, value: unknown) -> (boolean?, { Issue }?),
     safeParse: (self: BooleanSchema, value: unknown) -> Result<boolean>,
     parse: (self: BooleanSchema, value: unknown) -> boolean,
     isTrue: (self: BooleanSchema) -> BooleanSchema,
@@ -997,12 +1067,21 @@ end
 
 	Validates `value` without throwing.
 ]=]
-function BooleanSchema:safeParse(value: unknown): Result<boolean>
+function BooleanSchema:_validate(value: unknown): (boolean?, { Issue }?)
     if type(value) ~= "boolean" then
-        return fail(`expected boolean, got {typeof(value)}`)
+        return nil, failure(`expected boolean, got {typeof(value)}`)
+    end
+    return value, runChecks(value, self._checks)
+end
+
+function BooleanSchema:safeParse(value: unknown): Result<boolean>
+    local parsed, issues = self:_validate(value)
+
+    if issues ~= nil then
+        return { success = false, issues = issues }
     end
 
-    return run(value, self._checks)
+    return { success = true, value = parsed :: boolean }
 end
 
 --[=[
@@ -1015,12 +1094,13 @@ end
 	Validates `value` and returns it, throwing on failure.
 ]=]
 function BooleanSchema:parse(value: unknown): boolean
-    local result = self:safeParse(value)
-    if result.success then
-        return result.value
+    local parsed, issues = self:_validate(value)
+
+    if issues ~= nil then
+        error(describe(issues), 2)
     end
 
-    error(describe(result.issues), 2)
+    return parsed :: boolean
 end
 
 --[=[
@@ -1059,7 +1139,7 @@ end
 function BooleanSchema:optional(): OptionalSchema<boolean>
     local inner = self
     return newOptional(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, nil, nil)
 end
 
@@ -1074,7 +1154,7 @@ end
 function BooleanSchema:default(fallback: boolean): DefaultSchema<boolean>
     local inner = self
     return newDefault(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, function()
         return fallback
     end, true, nil, nil)
@@ -1097,7 +1177,7 @@ end
 function BooleanSchema:defaultWith(produce: () -> boolean): DefaultSchema<boolean>
     local inner = self
     return newDefault(function(value)
-        return inner:safeParse(value)
+        return inner:_validate(value)
     end, produce, false, nil, nil)
 end
 
@@ -1107,6 +1187,11 @@ end
 	Validates a contiguous array where every element matches one inner schema.
 	Tables carrying non-array keys are rejected outright.
 
+	The array you pass in is returned untouched unless an element fills a value
+	in, which only a nested [DefaultSchema] does. In that case the input is
+	shallow copied and the filled values written to the copy, so parsing never
+	modifies what it was given and never allocates a copy it does not need.
+
 	```lua
 	local Scores = v.array(v.number():integer()):max(4)
 	```
@@ -1115,6 +1200,7 @@ export type ArraySchema<T> = {
     minimum: number?,
     maximum: number?,
     isOptional: boolean,
+    _validate: (self: ArraySchema<T>, value: unknown) -> ({ T }?, { Issue }?),
     safeParse: (self: ArraySchema<T>, value: unknown) -> Result<{ T }>,
     parse: (self: ArraySchema<T>, value: unknown) -> { T },
     min: (self: ArraySchema<T>, n: number) -> ArraySchema<T>,
@@ -1127,7 +1213,7 @@ export type ArraySchema<T> = {
 type LengthCheck = (length: number) -> string?
 
 local function newArray<T>(
-    inner: (value: unknown) -> Result<T>,
+    inner: (value: unknown) -> (T?, { Issue }?),
     checks: { LengthCheck },
     minimum: number?,
     maximum: number?
@@ -1177,9 +1263,9 @@ local function newArray<T>(
 		Validates every element, reporting each failure with its index in the
 		issue path.
 	]=]
-    function self:safeParse(value: unknown): Result<{ T }>
+    local function validate(value: unknown): ({ T }?, { Issue }?)
         if type(value) ~= "table" then
-            return fail(`expected an array, got {typeof(value)}`)
+            return nil, failure(`expected an array, got {typeof(value)}`)
         end
 
         local items = value :: { unknown }
@@ -1191,37 +1277,62 @@ local function newArray<T>(
         end
 
         if total ~= length then
-            return fail(`expected an array, got a table with {total - length} non-array keys`)
+            return nil, failure(`expected an array, got a table with {total - length} non-array keys`)
         end
 
-        local issues: { Issue } = {}
+        local issues: { Issue }? = nil
+        local output = items
+        local copied = false
 
         for _, check in checks do
             local message = check(length)
-            if message then
-                table.insert(issues, { path = {} :: { string | number }, message = message })
-            end
-        end
 
-        local parsed: { T } = table.create(length)
-
-        for index = 1, length do
-            local result = inner(items[index])
-
-            if result.success then
-                parsed[index] = result.value
-            else
-                for _, issue in result.issues do
-                    table.insert(issues, { path = prependPath(index, issue.path), message = issue.message })
+            if message ~= nil then
+                if issues == nil then
+                    issues = { { path = EMPTY_PATH, message = message } }
+                else
+                    table.insert(issues :: { Issue }, { path = EMPTY_PATH, message = message })
                 end
             end
         end
 
-        if #issues > 0 then
-            return { success = false, issues = issues }
+        for index = 1, length do
+            local raw = items[index]
+            local parsed, elementIssues = inner(raw)
+
+            if elementIssues == nil then
+                -- Only a nested default produces a different value, so the copy
+                -- is paid for by schemas that fill something in.
+                if parsed ~= raw then
+                    if not copied then
+                        output = table.clone(items)
+                        copied = true
+                    end
+
+                    output[index] = parsed :: any
+                end
+            else
+                if issues == nil then
+                    issues = {}
+                end
+
+                local list = issues :: { Issue }
+
+                for _, issue in elementIssues do
+                    table.insert(list, { path = prependPath(index, issue.path), message = issue.message })
+                end
+            end
         end
 
-        return { success = true, value = parsed }
+        if issues ~= nil then
+            return nil, issues
+        end
+
+        return output :: any, nil
+    end
+
+    self._validate = function(_self: any, value: unknown): ({ T }?, { Issue }?)
+        return validate(value)
     end
 
     --[=[
@@ -1234,13 +1345,24 @@ local function newArray<T>(
 
 		Validates `value` and returns it, throwing on failure.
 	]=]
-    function self:parse(value: unknown): { T }
-        local result = self:safeParse(value)
-        if result.success then
-            return result.value
+    function self:safeParse(value: unknown): Result<{ T }>
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            return { success = false, issues = issues }
         end
 
-        error(describe(result.issues), 2)
+        return { success = true, value = parsed :: { T } }
+    end
+
+    function self:parse(value: unknown): { T }
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
+        end
+
+        return parsed :: { T }
     end
 
     --[=[
@@ -1293,7 +1415,7 @@ local function newArray<T>(
 	]=]
     function self:optional(): OptionalSchema<{ T }>
         return newOptional(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, self.minimum, self.maximum)
     end
 
@@ -1310,7 +1432,7 @@ local function newArray<T>(
 	]=]
     function self:default(fallback: { T }): DefaultSchema<{ T }>
         return newDefault(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, function()
             return fallback
         end, true, self.minimum, self.maximum)
@@ -1331,7 +1453,7 @@ local function newArray<T>(
 	]=]
     function self:defaultWith(produce: () -> { T }): DefaultSchema<{ T }>
         return newDefault(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, produce, false, self.minimum, self.maximum)
     end
 
@@ -1344,6 +1466,9 @@ end
 	Validates a fixed sequence where each position has its own schema. Use it
 	for packed argument lists and other positional payloads, where [ArraySchema]
 	would only let you say that every element is the same shape.
+
+	Like [ArraySchema], the input is returned untouched unless a position fills
+	a value in, in which case it is shallow copied first.
 
 	```lua
 	local Waypoint = v.tuple({ v.string(), v.number():integer() })
@@ -1366,6 +1491,7 @@ export type TupleSchema<T> = {
     minimum: number?,
     maximum: number?,
     isOptional: boolean,
+    _validate: (self: TupleSchema<T>, value: unknown) -> ({ T }?, { Issue }?),
     safeParse: (self: TupleSchema<T>, value: unknown) -> Result<{ T }>,
     parse: (self: TupleSchema<T>, value: unknown) -> { T },
     optional: (self: TupleSchema<T>) -> OptionalSchema<{ T }>,
@@ -1420,9 +1546,9 @@ local function newTuple<T>(positions: Positions<T>): TupleSchema<T>
 		Validates each position against its own schema, reporting failures with
 		the index in the issue path.
 	]=]
-    function self:safeParse(value: unknown): Result<{ T }>
+    local function validate(value: unknown): ({ T }?, { Issue }?)
         if type(value) ~= "table" then
-            return fail(`expected a tuple, got {typeof(value)}`)
+            return nil, failure(`expected a tuple, got {typeof(value)}`)
         end
 
         local items = value :: { unknown }
@@ -1434,35 +1560,54 @@ local function newTuple<T>(positions: Positions<T>): TupleSchema<T>
         end
 
         if total ~= length then
-            return fail(`expected a tuple, got a table with {total - length} non-array keys`)
+            return nil, failure(`expected a tuple, got a table with {total - length} non-array keys`)
         end
 
         if length > #positions then
-            return fail(`expected a tuple of {#positions} values, got {length}`)
+            return nil, failure(`expected a tuple of {#positions} values, got {length}`)
         end
 
-        local issues: { Issue } = {}
-        local parsed: { T } = table.create(#positions)
+        local issues: { Issue }? = nil
+        local output = items
+        local copied = false
 
         -- Positions past the end are parsed as nil, so an optional or defaulted
         -- tail still succeeds while a required one reports the missing index.
         for index, schema in positions do
-            local result = schema:safeParse(items[index])
+            local raw = items[index]
+            local parsed, elementIssues = schema:_validate(raw)
 
-            if result.success then
-                parsed[index] = result.value
+            if elementIssues == nil then
+                if parsed ~= raw then
+                    if not copied then
+                        output = table.clone(items)
+                        copied = true
+                    end
+
+                    output[index] = parsed :: any
+                end
             else
-                for _, issue in result.issues do
-                    table.insert(issues, { path = prependPath(index, issue.path), message = issue.message })
+                if issues == nil then
+                    issues = {}
+                end
+
+                local list = issues :: { Issue }
+
+                for _, issue in elementIssues do
+                    table.insert(list, { path = prependPath(index, issue.path), message = issue.message })
                 end
             end
         end
 
-        if #issues > 0 then
-            return { success = false, issues = issues }
+        if issues ~= nil then
+            return nil, issues
         end
 
-        return { success = true, value = parsed }
+        return output :: any, nil
+    end
+
+    self._validate = function(_self: any, value: unknown): ({ T }?, { Issue }?)
+        return validate(value)
     end
 
     --[=[
@@ -1475,13 +1620,24 @@ local function newTuple<T>(positions: Positions<T>): TupleSchema<T>
 
 		Validates `value` and returns it, throwing on failure.
 	]=]
-    function self:parse(value: unknown): { T }
-        local result = self:safeParse(value)
-        if result.success then
-            return result.value
+    function self:safeParse(value: unknown): Result<{ T }>
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            return { success = false, issues = issues }
         end
 
-        error(describe(result.issues), 2)
+        return { success = true, value = parsed :: { T } }
+    end
+
+    function self:parse(value: unknown): { T }
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
+        end
+
+        return parsed :: { T }
     end
 
     --[=[
@@ -1494,7 +1650,7 @@ local function newTuple<T>(positions: Positions<T>): TupleSchema<T>
 	]=]
     function self:optional(): OptionalSchema<{ T }>
         return newOptional(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, self.minimum, self.maximum)
     end
 
@@ -1511,7 +1667,7 @@ local function newTuple<T>(positions: Positions<T>): TupleSchema<T>
 	]=]
     function self:default(fallback: { T }): DefaultSchema<{ T }>
         return newDefault(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, function()
             return fallback
         end, true, self.minimum, self.maximum)
@@ -1532,7 +1688,7 @@ local function newTuple<T>(positions: Positions<T>): TupleSchema<T>
 	]=]
     function self:defaultWith(produce: () -> { T }): DefaultSchema<{ T }>
         return newDefault(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, produce, false, self.minimum, self.maximum)
     end
 
@@ -1563,6 +1719,7 @@ end
 export type ObjectSchema<T, S> = {
     shape: S,
     isOptional: boolean,
+    _validate: (self: ObjectSchema<T, S>, value: unknown) -> (T?, { Issue }?),
     safeParse: (self: ObjectSchema<T, S>, value: unknown) -> Result<T>,
     parse: (self: ObjectSchema<T, S>, value: unknown) -> T,
     strict: (self: ObjectSchema<T, S>) -> ObjectSchema<T, S>,
@@ -1571,7 +1728,7 @@ export type ObjectSchema<T, S> = {
     defaultWith: (self: ObjectSchema<T, S>, produce: () -> T) -> DefaultSchema<T>,
 }
 
-type Shape = { [string]: { safeParse: (any, unknown) -> Result<any> } }
+type Shape = { [string]: AnySchema<any> }
 
 local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutput<S>, S>
     local self = {}
@@ -1621,50 +1778,65 @@ local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutpu
 		Validates every field in the shape, reporting each failure with its
 		field name in the issue path.
 	]=]
-    function self:safeParse(value: unknown): Result<objectOutput<S>>
+    local function validate(value: unknown): (objectOutput<S>?, { Issue }?)
         if type(value) ~= "table" then
-            return fail(`expected an object, got {typeof(value)}`)
+            return nil, failure(`expected an object, got {typeof(value)}`)
         end
 
-        local issues: { Issue } = {}
-        local output = value :: any
+        local record = value :: { [string]: unknown }
+        local issues: { Issue }? = nil
+        local output = record
         local copied = false
 
         for key, schema in fields do
-            local raw = (value :: any)[key]
-            local result = schema:safeParse(raw)
+            local raw = record[key]
+            local parsed, fieldIssues = schema:_validate(raw)
 
-            if result.success then
+            if fieldIssues == nil then
                 -- A field only produces a different value when something filled
                 -- it in, so the copy is paid for only by schemas using defaults.
-                if result.value ~= raw then
+                if parsed ~= raw then
                     if not copied then
-                        output = table.clone(value :: any)
+                        output = table.clone(record)
                         copied = true
                     end
 
-                    output[key] = result.value
+                    output[key] = parsed
                 end
             else
-                for _, issue in result.issues do
-                    table.insert(issues, { path = prependPath(key, issue.path), message = issue.message })
+                if issues == nil then
+                    issues = {}
+                end
+
+                local list = issues :: { Issue }
+
+                for _, issue in fieldIssues do
+                    table.insert(list, { path = prependPath(key, issue.path), message = issue.message })
                 end
             end
         end
 
         if strict then
-            for key in value :: any do
+            for key in record do
                 if fields[key] == nil then
-                    table.insert(issues, { path = { key }, message = "unexpected key" })
+                    if issues == nil then
+                        issues = {}
+                    end
+
+                    table.insert(issues :: { Issue }, { path = { key }, message = "unexpected key" })
                 end
             end
         end
 
-        if #issues > 0 then
-            return { success = false, issues = issues }
+        if issues ~= nil then
+            return nil, issues
         end
 
-        return { success = true, value = output :: objectOutput<S> }
+        return output :: any, nil
+    end
+
+    self._validate = function(_self: any, value: unknown): (objectOutput<S>?, { Issue }?)
+        return validate(value)
     end
 
     --[=[
@@ -1677,13 +1849,24 @@ local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutpu
 
 		Validates `value` and returns it, throwing on failure.
 	]=]
-    function self:parse(value: unknown): objectOutput<S>
-        local result = self:safeParse(value)
-        if result.success then
-            return result.value
+    function self:safeParse(value: unknown): Result<objectOutput<S>>
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            return { success = false, issues = issues }
         end
 
-        error(describe(result.issues), 2)
+        return { success = true, value = parsed :: objectOutput<S> }
+    end
+
+    function self:parse(value: unknown): objectOutput<S>
+        local parsed, issues = validate(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
+        end
+
+        return parsed :: objectOutput<S>
     end
 
     --[=[
@@ -1712,7 +1895,7 @@ local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutpu
 	]=]
     function self:optional(): OptionalSchema<objectOutput<S>>
         return newOptional(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, nil, nil)
     end
 
@@ -1729,7 +1912,7 @@ local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutpu
 	]=]
     function self:default(fallback: objectOutput<S>): DefaultSchema<objectOutput<S>>
         return newDefault(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, function()
             return fallback
         end, true, nil, nil)
@@ -1750,7 +1933,7 @@ local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutpu
 	]=]
     function self:defaultWith(produce: () -> objectOutput<S>): DefaultSchema<objectOutput<S>>
         return newDefault(function(value)
-            return this:safeParse(value)
+            return this:_validate(value)
         end, produce, false, nil, nil)
     end
 
@@ -1964,7 +2147,7 @@ function Vet.array<S>(item: S): ArraySchema<infer<S>>
     local schema = item :: AnySchema<infer<S>>
 
     return newArray(function(value)
-        return schema:safeParse(value)
+        return schema:_validate(value)
     end, {}, nil, nil)
 end
 
