@@ -66,6 +66,10 @@ have checked it.
 Every refinement runs before the result is returned, so `issues` describes each
 failure rather than stopping at the first.
 
+`parse` throws, so it is the assertion if you want one. It is named for what it
+returns rather than what it raises — see [why parse and not assert](./why-parse)
+for the reasoning.
+
 ## Inferring types
 
 `v.infer` extracts the type a schema parses to, so the schema stays the only
