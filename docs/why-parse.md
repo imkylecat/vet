@@ -59,15 +59,16 @@ Settings:parse(complete) == complete --> true
 
 It does, and that is the argument for `parse` rather than against it.
 
-`assert(v, message)` hands back everything it was given whenever `v` is truthy.
-`local part = assert(workspace:FindFirstChild("Baseplate"))` is the idiom that
-rests on it, and Luau passes every argument through, not just the first:
+`assert(v, message)` hands the value back whenever `v` is truthy, and Luau
+types it that way too — as the same value with the `nil` narrowed off, which is
+what makes this idiom work:
 
 ```lua
-select("#", assert(1, "message", 3)) --> 3
+local part = assert(workspace:FindFirstChild("Baseplate"))
+part.Name --> fine, `part` is an Instance rather than an Instance?
 ```
 
-What it hands back is the same value, though — not a new one built from it:
+What comes back is that value, though, not a new one built from it:
 
 ```lua
 local raw = { Volume = 0.2 }
