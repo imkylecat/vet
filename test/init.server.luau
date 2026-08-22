@@ -148,6 +148,85 @@ local JustVolume = Vet.object({ volume = Settings.shape.volume })
 
 assert(JustVolume:parse({}).volume == 0.5)
 
+-- readonly and writeonly change the type a field gets, never the check. Both
+-- come last in a chain, so the refinements before them still apply.
+local PlayerId = Vet.number():integer():min(1):readonly()
+
+assert(PlayerId:parse(7) == 7)
+assert(not PlayerId:safeParse(0).success)
+assert(not PlayerId:safeParse(1.5).success)
+assert(PlayerId.access == "read")
+assert(PlayerId.minimum == 1)
+assert(PlayerId.isOptional == false)
+
+local Token = Vet.string():length(4):writeonly()
+
+assert(Token:parse("abcd") == "abcd")
+assert(not Token:safeParse("abc").success)
+assert(Token.access == "write")
+assert(Token.maximum == 4)
+
+-- Every schema carries a marker, so a shape can be walked without knowing
+-- which kind of schema each field is.
+assert(Vet.string().access == "readwrite")
+assert(Vet.number():optional().access == "readwrite")
+assert(Vet.boolean():default(false).access == "readwrite")
+assert(Vet.literal("npc").access == "readwrite")
+assert(Vet.color3().access == "readwrite")
+assert(Vet.array(Vet.string()).access == "readwrite")
+assert(Vet.tuple({ Vet.string() }).access == "readwrite")
+assert(Vet.object({}).access == "readwrite")
+assert(Vet.union({ Vet.string() }).access == "readwrite")
+
+-- The wrappers are terminal but not a dead end: asking again is a no-op, and
+-- asking for the other one replaces the marker.
+assert(PlayerId:readonly() == PlayerId)
+assert(PlayerId:writeonly().access == "write")
+assert(PlayerId:writeonly():readonly().access == "read")
+assert(PlayerId:writeonly():parse(7) == 7)
+
+-- The standalone form takes a schema that arrived from somewhere else, and
+-- carries its reflection across.
+local Wrapped = Vet.readonly(Settings.shape.volume)
+
+assert(Wrapped.access == "read")
+assert(Wrapped.minimum == 0)
+assert(Wrapped.maximum == 1)
+assert(Wrapped:parse(nil) == 0.5)
+assert(Vet.writeonly(Vet.string():optional()).isOptional)
+
+local PlayerData = Vet.object({
+    id = Vet.number():integer():readonly(),
+    name = Vet.string():min(1),
+    secretToken = Vet.string():length(4):writeonly(),
+})
+
+local player = PlayerData:parse({ id = 1, name = "kyle", secretToken = "abcd" })
+
+-- The values are all there at runtime; only the type says who may touch them.
+assert(player.id == 1)
+assert((player :: any).secretToken == "abcd")
+assert(not PlayerData:safeParse({ id = 1.5, name = "kyle", secretToken = "abcd" }).success)
+assert(not PlayerData:safeParse({ id = 1, name = "kyle", secretToken = "ab" }).success)
+
+-- The marker survives into the shape, which is where inference reads it from.
+assert(PlayerData.shape.id.access == "read")
+assert(PlayerData.shape.name.access == "readwrite")
+assert(PlayerData.shape.secretToken.access == "write")
+
+local badPlayer = PlayerData:safeParse({ id = 1, name = "kyle" })
+
+assert(not badPlayer.success)
+
+if not badPlayer.success then
+    assert(badPlayer.issues[1].path[1] == "secretToken")
+end
+
+-- A default still fills in behind a marker, and the fill is what gets read.
+local Filled = Vet.object({ level = Vet.number():default(1):readonly() })
+
+assert(Filled:parse({}).level == 1)
+
 local Waypoint = Vet.tuple({ Vet.string(), Vet.number():integer() })
 
 assert(Waypoint:parse({ "spawn", 3 })[2] == 3)
@@ -321,12 +400,51 @@ local settingsVolume: number = settings.volume
 
 assert(settingsVolume == 0.5)
 
+-- Access modifiers survive inference, so the record carries Luau's `read` and
+-- `write` property qualifiers rather than plain fields.
+type InferredPlayerData = Vet.infer<typeof(PlayerData)>
+
+local playerData: InferredPlayerData = PlayerData:parse({ id = 1, name = "kyle", secretToken = "abcd" })
+
+local playerId: number = playerData.id
+local playerName: string = playerData.name
+
+-- A plain field is still writable, and a write-only one is writable but never
+-- readable.
+playerData.name = "alex"
+playerData.secretToken = "efgh"
+
+assert(playerId == 1)
+assert(playerName == "kyle")
+
+-- A modifier composes with the wrappers before it, and the field type stays
+-- whatever the wrapped schema parses to.
+local Marked = Vet.object({
+    tagline = Vet.string():optional():readonly(),
+    level = Vet.number():default(1):readonly(),
+})
+
+type InferredMarked = Vet.infer<typeof(Marked)>
+
+local marked: InferredMarked = Marked:parse({})
+local markedTagline: string? = marked.tagline
+local markedLevel: number = marked.level
+
+assert(markedTagline == nil)
+assert(markedLevel == 1)
+
 -- These must NOT compile. Uncomment to confirm infer is exact rather than any:
 -- local notANumber: number = username
 -- local notOptional: string = nickname
 -- local notAString: string = user.level
 -- local notRequired: string = user.nickname
 -- local notEither: string = identifier
+
+-- These must NOT compile either, which is the whole point of the modifiers:
+-- playerData.id = 2
+-- local leaked: string = playerData.secretToken
+-- marked.level = 5
+-- marked.tagline = "kyle"
 
 local result = Username:safeParse("k")
 if not result.success then

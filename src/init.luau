@@ -68,14 +68,15 @@ export type Result<T> = { success: true, value: T } | Failure
 ]=]
 export type function infer(schema)
     local PARSE = types.singleton("parse")
+    local INDEX = types.singleton("__index")
 
-    local function outputOf(candidate)
+    -- Closure-based schemas hold `parse` directly; metatable-based ones keep it
+    -- on the metatable, either as a property or behind __index.
+    local function parseOf(candidate)
         if not candidate:is("table") then
-            error(`expected a schema, got a {candidate.tag}`)
+            return nil
         end
 
-        -- Closure-based schemas hold `parse` directly; metatable-based ones
-        -- keep it on the metatable, either as a property or behind __index.
         local parse = candidate:readproperty(PARSE)
 
         if parse == nil then
@@ -85,7 +86,7 @@ export type function infer(schema)
                 parse = metatable:readproperty(PARSE)
 
                 if parse == nil then
-                    local index = metatable:readproperty(types.singleton("__index"))
+                    local index = metatable:readproperty(INDEX)
 
                     if index ~= nil and index:is("table") then
                         parse = index:readproperty(PARSE)
@@ -94,8 +95,32 @@ export type function infer(schema)
             end
         end
 
+        return parse
+    end
+
+    local function outputOf(candidate)
+        local parse = parseOf(candidate)
+
+        -- Reading a plain property off a schema, such as `shape.level.minimum`,
+        -- can leave the solver holding the schema intersected with what that
+        -- read implied. The schema is still one of the parts, so it is looked
+        -- for rather than refused.
+        if parse == nil and candidate:is("intersection") then
+            for _, part in candidate:components() do
+                parse = parseOf(part)
+
+                if parse ~= nil then
+                    break
+                end
+            end
+        end
+
         if parse == nil then
-            error("expected a schema with a `parse` method")
+            if candidate:is("table") or candidate:is("intersection") then
+                error("expected a schema with a `parse` method")
+            end
+
+            error(`expected a schema, got a {candidate.tag}`)
         end
 
         if not parse:is("function") then
@@ -136,6 +161,21 @@ end
 	number }`. Used to type the result of `Vet.object`, so the shape you pass in
 	is the only place the field types are written down.
 
+	A field wrapped by [ReadonlySchema] or [WriteonlySchema] carries an `access`
+	marker, which becomes a `read` or `write` qualifier on the property it
+	produces:
+
+	```lua
+	local PlayerData = v.object({
+		id = v.number():readonly(),
+		name = v.string(),
+		secretToken = v.string():writeonly(),
+	})
+
+	type PlayerData = v.infer<typeof(PlayerData)>
+	--> { read id: number, name: string, write secretToken: string }
+	```
+
 	The property walk duplicates the one in [Vet.infer] because a type function
 	cannot call another type function.
 ]=]
@@ -145,32 +185,64 @@ export type function objectOutput(shape)
     end
 
     local PARSE = types.singleton("parse")
+    local ACCESS = types.singleton("access")
+    local INDEX = types.singleton("__index")
     local output = types.newtable()
 
-    for key, property in shape:properties() do
-        local candidate = property.read
-
-        if candidate == nil or not candidate:is("table") then
-            error("expected every field to be a schema")
+    -- Closure-based schemas hold their fields directly; metatable-based ones
+    -- keep them on the metatable, either as a property or behind __index.
+    local function readFrom(candidate, key)
+        if not candidate:is("table") then
+            return nil
         end
 
-        local parse = candidate:readproperty(PARSE)
+        local found = candidate:readproperty(key)
 
-        if parse == nil then
+        if found == nil then
             local metatable = candidate:metatable()
 
             if metatable ~= nil then
-                parse = metatable:readproperty(PARSE)
+                found = metatable:readproperty(key)
 
-                if parse == nil then
-                    local index = metatable:readproperty(types.singleton("__index"))
+                if found == nil then
+                    local index = metatable:readproperty(INDEX)
 
                     if index ~= nil and index:is("table") then
-                        parse = index:readproperty(PARSE)
+                        found = index:readproperty(key)
                     end
                 end
             end
         end
+
+        return found
+    end
+
+    -- Reading a plain property off a field schema can leave the solver holding
+    -- an intersection rather than the schema itself, so each part is tried.
+    local function lookup(candidate, key)
+        local found = readFrom(candidate, key)
+
+        if found == nil and candidate:is("intersection") then
+            for _, part in candidate:components() do
+                found = readFrom(part, key)
+
+                if found ~= nil then
+                    break
+                end
+            end
+        end
+
+        return found
+    end
+
+    for key, property in shape:properties() do
+        local candidate = property.read
+
+        if candidate == nil or not (candidate:is("table") or candidate:is("intersection")) then
+            error("expected every field to be a schema")
+        end
+
+        local parse = lookup(candidate, PARSE)
 
         if parse == nil or not parse:is("function") then
             error("expected every field to be a schema with a `parse` method")
@@ -182,7 +254,18 @@ export type function objectOutput(shape)
             error("expected `parse` to return a value")
         end
 
-        output:setproperty(key, head[1])
+        -- A marker only reads as read-only or write-only when it is the
+        -- singleton the wrapper declares; anything else stays read-write.
+        local access = lookup(candidate, ACCESS)
+        local marker = if access ~= nil and access:is("singleton") then access:value() else nil
+
+        if marker == "read" then
+            output:setreadproperty(key, head[1])
+        elseif marker == "write" then
+            output:setwriteproperty(key, head[1])
+        else
+            output:setproperty(key, head[1])
+        end
     end
 
     return output
@@ -275,6 +358,334 @@ local function describe(issues: { Issue }): string
 end
 
 --[=[
+	@class ReadonlySchema
+
+	Marks a field as read-only, so the record an [ObjectSchema] parses to
+	declares it `read`. Created by calling `:readonly()` on any schema, or by
+	wrapping one with [Vet.readonly]. It comes last in a chain, after the
+	refinements and after `:optional()` or `:default()`.
+
+	```lua
+	local PlayerData = v.object({
+		id = v.number():integer():readonly(),
+		name = v.string(),
+	})
+
+	type PlayerData = v.infer<typeof(PlayerData)>
+	--> { read id: number, name: string }
+
+	local data = PlayerData:parse(payload)
+
+	print(data.id) --> fine
+	data.id = 2    --> analysis error: `id` is read-only
+	```
+
+	Validation is untouched: the field is parsed exactly as the wrapped schema
+	would parse it, and the value is there at runtime. Only the type differs, so
+	the restriction is caught during analysis rather than enforced by a
+	metatable on every write.
+]=]
+export type ReadonlySchema<T> = {
+    access: "read",
+    minimum: number?,
+    maximum: number?,
+    isOptional: boolean,
+    _validate: (self: ReadonlySchema<T>, value: unknown) -> (T?, { Issue }?),
+    safeParse: (self: ReadonlySchema<T>, value: unknown) -> Result<T>,
+    parse: (self: ReadonlySchema<T>, value: unknown) -> T,
+    readonly: (self: ReadonlySchema<T>) -> ReadonlySchema<T>,
+    writeonly: (self: ReadonlySchema<T>) -> WriteonlySchema<T>,
+}
+
+--[=[
+	@class WriteonlySchema
+
+	Marks a field as write-only, so the record an [ObjectSchema] parses to
+	declares it `write`. Created by calling `:writeonly()` on any schema, or by
+	wrapping one with [Vet.writeonly].
+
+	```lua
+	local PlayerData = v.object({
+		name = v.string(),
+		secretToken = v.string():writeonly(),
+	})
+
+	type PlayerData = v.infer<typeof(PlayerData)>
+	--> { name: string, write secretToken: string }
+
+	local data = PlayerData:parse(payload)
+
+	data.secretToken = "rotated" --> fine
+	print(data.secretToken)      --> analysis error: `secretToken` is write-only
+	```
+
+	Use it for a field that has to be validated on the way in but must not be
+	read back out by accident — a token, a password, a nonce. Like
+	[ReadonlySchema] this is a type-level restriction, so the value is still
+	present at runtime and still reachable through a cast.
+]=]
+export type WriteonlySchema<T> = {
+    access: "write",
+    minimum: number?,
+    maximum: number?,
+    isOptional: boolean,
+    _validate: (self: WriteonlySchema<T>, value: unknown) -> (T?, { Issue }?),
+    safeParse: (self: WriteonlySchema<T>, value: unknown) -> Result<T>,
+    parse: (self: WriteonlySchema<T>, value: unknown) -> T,
+    readonly: (self: WriteonlySchema<T>) -> ReadonlySchema<T>,
+    writeonly: (self: WriteonlySchema<T>) -> WriteonlySchema<T>,
+}
+
+--[=[
+	@type Access "read" | "write" | "readwrite"
+	@within Vet
+
+	What a schema's `access` property holds. Every schema carries one, so a
+	shape can be inspected without knowing which kind of schema a field is:
+
+	```lua
+	local Player = v.object({ id = v.number():readonly(), name = v.string() })
+
+	Player.shape.id.access   --> "read"
+	Player.shape.name.access --> "readwrite"
+	```
+
+	Each schema type declares the single value it can hold rather than this
+	union, which is what lets [Vet.objectOutput] read the marker during
+	analysis.
+]=]
+export type Access = "read" | "write" | "readwrite"
+
+-- One factory backs both wrappers, since they differ only by the marker they
+-- carry and the qualifier that marker becomes.
+local function newAccess<T>(
+    marker: "read" | "write",
+    inner: (value: unknown) -> (T?, { Issue }?),
+    isOptional: boolean,
+    minimum: number?,
+    maximum: number?
+): ReadonlySchema<T>
+    local self = {}
+    local this = (self :: any) :: ReadonlySchema<T>
+
+    --[=[
+		@within ReadonlySchema
+		@prop access "read"
+		@tag Reflection
+		@readonly
+
+		Always `"read"`.
+	]=]
+
+    --[=[
+		@within WriteonlySchema
+		@prop access "write"
+		@tag Reflection
+		@readonly
+
+		Always `"write"`.
+	]=]
+    self.access = marker
+
+    --[=[
+		@within ReadonlySchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema, so `v.string():optional():readonly()`
+		still reports itself as optional.
+	]=]
+
+    --[=[
+		@within WriteonlySchema
+		@prop isOptional boolean
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema.
+	]=]
+    self.isOptional = isOptional
+
+    --[=[
+		@within ReadonlySchema
+		@prop minimum number?
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema.
+	]=]
+
+    --[=[
+		@within WriteonlySchema
+		@prop minimum number?
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema.
+	]=]
+    self.minimum = minimum
+
+    --[=[
+		@within ReadonlySchema
+		@prop maximum number?
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema.
+	]=]
+
+    --[=[
+		@within WriteonlySchema
+		@prop maximum number?
+		@tag Reflection
+		@readonly
+
+		Forwarded from the wrapped schema.
+	]=]
+    self.maximum = maximum
+
+    self._validate = function(_self: any, value: unknown): (T?, { Issue }?)
+        return inner(value)
+    end
+
+    --[=[
+		@within ReadonlySchema
+		@method safeParse
+		@tag Parsing
+		@param value unknown
+		@return Result<T>
+
+		Defers to the wrapped schema. The marker changes the type a surrounding
+		object produces, never what is accepted.
+	]=]
+
+    --[=[
+		@within WriteonlySchema
+		@method safeParse
+		@tag Parsing
+		@param value unknown
+		@return Result<T>
+
+		Defers to the wrapped schema.
+	]=]
+    function self:safeParse(value: unknown): Result<T>
+        local parsed, issues = inner(value)
+
+        if issues ~= nil then
+            return { success = false, issues = issues }
+        end
+
+        return { success = true, value = parsed :: T }
+    end
+
+    --[=[
+		@within ReadonlySchema
+		@method parse
+		@tag Parsing
+		@param value unknown
+		@return T
+		@error "expected ..." -- Thrown when `value` fails the wrapped schema
+
+		Validates `value` and returns it, throwing on failure.
+	]=]
+
+    --[=[
+		@within WriteonlySchema
+		@method parse
+		@tag Parsing
+		@param value unknown
+		@return T
+		@error "expected ..." -- Thrown when `value` fails the wrapped schema
+
+		Validates `value` and returns it, throwing on failure.
+	]=]
+    function self:parse(value: unknown): T
+        local parsed, issues = inner(value)
+
+        if issues ~= nil then
+            error(describe(issues), 2)
+        end
+
+        return parsed :: T
+    end
+
+    --[=[
+		@within ReadonlySchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<T>
+
+		Returns the same schema, since it is already read-only.
+	]=]
+
+    --[=[
+		@within WriteonlySchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<T>
+
+		Returns a read-only wrapper around the same schema, replacing the
+		write-only marker.
+	]=]
+    function self:readonly(): ReadonlySchema<T>
+        if marker == "read" then
+            return this
+        end
+
+        return newAccess("read", inner, isOptional, minimum, maximum)
+    end
+
+    --[=[
+		@within ReadonlySchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<T>
+
+		Returns a write-only wrapper around the same schema, replacing the
+		read-only marker.
+	]=]
+
+    --[=[
+		@within WriteonlySchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<T>
+
+		Returns the same schema, since it is already write-only.
+	]=]
+    function self:writeonly(): WriteonlySchema<T>
+        if marker == "write" then
+            return (this :: any) :: WriteonlySchema<T>
+        end
+
+        return (newAccess("write", inner, isOptional, minimum, maximum) :: any) :: WriteonlySchema<T>
+    end
+
+    return this
+end
+
+local function newReadonly<T>(
+    inner: (value: unknown) -> (T?, { Issue }?),
+    isOptional: boolean,
+    minimum: number?,
+    maximum: number?
+): ReadonlySchema<T>
+    return newAccess("read", inner, isOptional, minimum, maximum)
+end
+
+-- newAccess is typed as the read-only wrapper because the two shapes differ
+-- only in the singleton they declare, so the write-only name is put back here.
+local function newWriteonly<T>(
+    inner: (value: unknown) -> (T?, { Issue }?),
+    isOptional: boolean,
+    minimum: number?,
+    maximum: number?
+): WriteonlySchema<T>
+    return (newAccess("write", inner, isOptional, minimum, maximum) :: any) :: WriteonlySchema<T>
+end
+
+--[=[
 	@class OptionalSchema
 
 	Accepts `nil` in addition to whatever the wrapped schema accepts. Created by
@@ -290,6 +701,7 @@ end
 	```
 ]=]
 export type OptionalSchema<T> = {
+    access: "readwrite",
     minimum: number?,
     maximum: number?,
     isOptional: boolean,
@@ -297,6 +709,8 @@ export type OptionalSchema<T> = {
     safeParse: (self: OptionalSchema<T>, value: unknown) -> Result<T?>,
     parse: (self: OptionalSchema<T>, value: unknown) -> T?,
     optional: (self: OptionalSchema<T>) -> OptionalSchema<T>,
+    readonly: (self: OptionalSchema<T>) -> ReadonlySchema<T?>,
+    writeonly: (self: OptionalSchema<T>) -> WriteonlySchema<T?>,
 }
 
 local function newOptional<T>(
@@ -316,6 +730,16 @@ local function newOptional<T>(
 		Always `true`.
 	]=]
     self.isOptional = true
+
+    --[=[
+		@within OptionalSchema
+		@prop access "readwrite"
+		@tag Reflection
+		@readonly
+
+		Always `"readwrite"`. Chain `:readonly()` or `:writeonly()` to change it.
+	]=]
+    self.access = "readwrite"
 
     --[=[
 		@within OptionalSchema
@@ -406,6 +830,33 @@ local function newOptional<T>(
         return this
     end
 
+    --[=[
+		@within OptionalSchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<T?>
+
+		Wraps this schema so that a field using it is typed `read`. The value
+		type keeps the `?`, so the field reads as `read name: string?`.
+	]=]
+    function self:readonly(): ReadonlySchema<T?>
+        -- newReadonly binds its type parameter from the non-nil half of what
+        -- validate returns, so the optional half is named again here.
+        return (newReadonly(validate, true, minimum, maximum) :: any) :: ReadonlySchema<T?>
+    end
+
+    --[=[
+		@within OptionalSchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<T?>
+
+		Wraps this schema so that a field using it is typed `write`.
+	]=]
+    function self:writeonly(): WriteonlySchema<T?>
+        return (newWriteonly(validate, true, minimum, maximum) :: any) :: WriteonlySchema<T?>
+    end
+
     return this
 end
 
@@ -434,12 +885,15 @@ end
 	```
 ]=]
 export type DefaultSchema<T> = {
+    access: "readwrite",
     minimum: number?,
     maximum: number?,
     isOptional: boolean,
     _validate: (self: DefaultSchema<T>, value: unknown) -> (T?, { Issue }?),
     safeParse: (self: DefaultSchema<T>, value: unknown) -> Result<T>,
     parse: (self: DefaultSchema<T>, value: unknown) -> T,
+    readonly: (self: DefaultSchema<T>) -> ReadonlySchema<T>,
+    writeonly: (self: DefaultSchema<T>) -> WriteonlySchema<T>,
 }
 
 local function newDefault<T>(
@@ -462,6 +916,16 @@ local function newDefault<T>(
 		produces `nil`, so callers do not have to handle one.
 	]=]
     self.isOptional = false
+
+    --[=[
+		@within DefaultSchema
+		@prop access "readwrite"
+		@tag Reflection
+		@readonly
+
+		Always `"readwrite"`. Chain `:readonly()` or `:writeonly()` to change it.
+	]=]
+    self.access = "readwrite"
 
     --[=[
 		@within DefaultSchema
@@ -558,6 +1022,31 @@ local function newDefault<T>(
         return parsed :: T
     end
 
+    --[=[
+		@within DefaultSchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<T>
+
+		Wraps this schema so that a field using it is typed `read`. The fallback
+		is still filled in, so the field is read-only but never missing.
+	]=]
+    function self:readonly(): ReadonlySchema<T>
+        return newReadonly(validate, false, minimum, maximum)
+    end
+
+    --[=[
+		@within DefaultSchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<T>
+
+		Wraps this schema so that a field using it is typed `write`.
+	]=]
+    function self:writeonly(): WriteonlySchema<T>
+        return newWriteonly(validate, false, minimum, maximum)
+    end
+
     return this
 end
 
@@ -583,6 +1072,8 @@ type StringImpl = {
     optional: (self: StringSchema) -> OptionalSchema<string>,
     default: (self: StringSchema, fallback: string) -> DefaultSchema<string>,
     defaultWith: (self: StringSchema, produce: () -> string) -> DefaultSchema<string>,
+    readonly: (self: StringSchema) -> ReadonlySchema<string>,
+    writeonly: (self: StringSchema) -> WriteonlySchema<string>,
 }
 
 export type StringSchema = typeof(setmetatable(
@@ -591,6 +1082,7 @@ export type StringSchema = typeof(setmetatable(
         minimum: number?,
         maximum: number?,
         isOptional: boolean,
+        access: "readwrite",
     },
     {} :: StringImpl
 ))
@@ -627,12 +1119,23 @@ StringSchema.__index = StringSchema
 	Always `false`. Reading it on any schema tells you whether `nil` is
 	accepted without having to know which kind of schema you hold.
 ]=]
+
+--[=[
+	@within StringSchema
+	@prop access "readwrite"
+	@tag Reflection
+	@readonly
+
+	Always `"readwrite"`. Chain [StringSchema:readonly] or
+	[StringSchema:writeonly] to change it.
+]=]
 local function newString(checks: { Check<string> }, minimum: number?, maximum: number?): StringSchema
     return setmetatable({
         _checks = checks,
         minimum = minimum,
         maximum = maximum,
         isOptional = false,
+        access = "readwrite" :: "readwrite",
     }, StringSchema)
 end
 
@@ -788,6 +1291,34 @@ function StringSchema:defaultWith(produce: () -> string): DefaultSchema<string>
 end
 
 --[=[
+	@within StringSchema
+	@tag Wrapper
+	@return ReadonlySchema<string>
+
+	Wraps this schema so that a field using it is typed `read`.
+]=]
+function StringSchema:readonly(): ReadonlySchema<string>
+    local inner = self
+    return newReadonly(function(value)
+        return inner:_validate(value)
+    end, false, self.minimum, self.maximum)
+end
+
+--[=[
+	@within StringSchema
+	@tag Wrapper
+	@return WriteonlySchema<string>
+
+	Wraps this schema so that a field using it is typed `write`.
+]=]
+function StringSchema:writeonly(): WriteonlySchema<string>
+    local inner = self
+    return newWriteonly(function(value)
+        return inner:_validate(value)
+    end, false, self.minimum, self.maximum)
+end
+
+--[=[
 	@class NumberSchema
 
 	Validates numbers. NaN is rejected before any refinement runs.
@@ -807,6 +1338,8 @@ type NumberImpl = {
     optional: (self: NumberSchema) -> OptionalSchema<number>,
     default: (self: NumberSchema, fallback: number) -> DefaultSchema<number>,
     defaultWith: (self: NumberSchema, produce: () -> number) -> DefaultSchema<number>,
+    readonly: (self: NumberSchema) -> ReadonlySchema<number>,
+    writeonly: (self: NumberSchema) -> WriteonlySchema<number>,
 }
 
 export type NumberSchema = typeof(setmetatable(
@@ -815,6 +1348,7 @@ export type NumberSchema = typeof(setmetatable(
         minimum: number?,
         maximum: number?,
         isOptional: boolean,
+        access: "readwrite",
     },
     {} :: NumberImpl
 ))
@@ -850,12 +1384,23 @@ NumberSchema.__index = NumberSchema
 
 	Always `false`.
 ]=]
+
+--[=[
+	@within NumberSchema
+	@prop access "readwrite"
+	@tag Reflection
+	@readonly
+
+	Always `"readwrite"`. Chain [NumberSchema:readonly] or
+	[NumberSchema:writeonly] to change it.
+]=]
 local function newNumber(checks: { Check<number> }, minimum: number?, maximum: number?): NumberSchema
     return setmetatable({
         _checks = checks,
         minimum = minimum,
         maximum = maximum,
         isOptional = false,
+        access = "readwrite" :: "readwrite",
     }, NumberSchema)
 end
 
@@ -1014,6 +1559,34 @@ function NumberSchema:defaultWith(produce: () -> number): DefaultSchema<number>
 end
 
 --[=[
+	@within NumberSchema
+	@tag Wrapper
+	@return ReadonlySchema<number>
+
+	Wraps this schema so that a field using it is typed `read`.
+]=]
+function NumberSchema:readonly(): ReadonlySchema<number>
+    local inner = self
+    return newReadonly(function(value)
+        return inner:_validate(value)
+    end, false, self.minimum, self.maximum)
+end
+
+--[=[
+	@within NumberSchema
+	@tag Wrapper
+	@return WriteonlySchema<number>
+
+	Wraps this schema so that a field using it is typed `write`.
+]=]
+function NumberSchema:writeonly(): WriteonlySchema<number>
+    local inner = self
+    return newWriteonly(function(value)
+        return inner:_validate(value)
+    end, false, self.minimum, self.maximum)
+end
+
+--[=[
 	@class BooleanSchema
 
 	Validates booleans. Truthy values that are not booleans, such as `1` or
@@ -1031,12 +1604,15 @@ type BooleanImpl = {
     optional: (self: BooleanSchema) -> OptionalSchema<boolean>,
     default: (self: BooleanSchema, fallback: boolean) -> DefaultSchema<boolean>,
     defaultWith: (self: BooleanSchema, produce: () -> boolean) -> DefaultSchema<boolean>,
+    readonly: (self: BooleanSchema) -> ReadonlySchema<boolean>,
+    writeonly: (self: BooleanSchema) -> WriteonlySchema<boolean>,
 }
 
 export type BooleanSchema = typeof(setmetatable(
     {} :: {
         _checks: { Check<boolean> },
         isOptional: boolean,
+        access: "readwrite",
     },
     {} :: BooleanImpl
 ))
@@ -1053,8 +1629,22 @@ BooleanSchema.__index = BooleanSchema
 	Always `false`. Booleans carry no `minimum` or `maximum`, since neither
 	means anything for two values.
 ]=]
+
+--[=[
+	@within BooleanSchema
+	@prop access "readwrite"
+	@tag Reflection
+	@readonly
+
+	Always `"readwrite"`. Chain [BooleanSchema:readonly] or
+	[BooleanSchema:writeonly] to change it.
+]=]
 local function newBoolean(checks: { Check<boolean> }): BooleanSchema
-    return setmetatable({ _checks = checks, isOptional = false }, BooleanSchema)
+    return setmetatable({
+        _checks = checks,
+        isOptional = false,
+        access = "readwrite" :: "readwrite",
+    }, BooleanSchema)
 end
 
 --[=[
@@ -1152,6 +1742,34 @@ function BooleanSchema:defaultWith(produce: () -> boolean): DefaultSchema<boolea
         return inner:_validate(value)
     end, produce, false, nil, nil)
 end
+
+--[=[
+	@within BooleanSchema
+	@tag Wrapper
+	@return ReadonlySchema<boolean>
+
+	Wraps this schema so that a field using it is typed `read`.
+]=]
+function BooleanSchema:readonly(): ReadonlySchema<boolean>
+    local inner = self
+    return newReadonly(function(value)
+        return inner:_validate(value)
+    end, false, nil, nil)
+end
+
+--[=[
+	@within BooleanSchema
+	@tag Wrapper
+	@return WriteonlySchema<boolean>
+
+	Wraps this schema so that a field using it is typed `write`.
+]=]
+function BooleanSchema:writeonly(): WriteonlySchema<boolean>
+    local inner = self
+    return newWriteonly(function(value)
+        return inner:_validate(value)
+    end, false, nil, nil)
+end
 --[=[
 	@class DatatypeSchema
 
@@ -1177,12 +1795,15 @@ end
 export type DatatypeSchema<T> = {
     typeName: string,
     isOptional: boolean,
+    access: "readwrite",
     _validate: (self: DatatypeSchema<T>, value: unknown) -> (T?, { Issue }?),
     safeParse: (self: DatatypeSchema<T>, value: unknown) -> Result<T>,
     parse: (self: DatatypeSchema<T>, value: unknown) -> T,
     optional: (self: DatatypeSchema<T>) -> OptionalSchema<T>,
     default: (self: DatatypeSchema<T>, fallback: T) -> DefaultSchema<T>,
     defaultWith: (self: DatatypeSchema<T>, produce: () -> T) -> DefaultSchema<T>,
+    readonly: (self: DatatypeSchema<T>) -> ReadonlySchema<T>,
+    writeonly: (self: DatatypeSchema<T>) -> WriteonlySchema<T>,
 }
 
 --[=[
@@ -1224,6 +1845,16 @@ local function newDatatype<T>(typeName: string): DatatypeSchema<T>
 		Always `false`. Datatypes carry no `minimum` or `maximum`.
 	]=]
     self.isOptional = false
+
+    --[=[
+		@within DatatypeSchema
+		@prop access "readwrite"
+		@tag Reflection
+		@readonly
+
+		Always `"readwrite"`. Chain `:readonly()` or `:writeonly()` to change it.
+	]=]
+    self.access = "readwrite"
 
     local function validate(value: unknown): (T?, { Issue }?)
         if typeof(value) ~= typeName then
@@ -1322,6 +1953,34 @@ local function newDatatype<T>(typeName: string): DatatypeSchema<T>
         end, produce, false, nil, nil)
     end
 
+    --[=[
+		@within DatatypeSchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<T>
+
+		Wraps this schema so that a field using it is typed `read`.
+	]=]
+    function self:readonly(): ReadonlySchema<T>
+        return newReadonly(function(value)
+            return this:_validate(value)
+        end, false, nil, nil)
+    end
+
+    --[=[
+		@within DatatypeSchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<T>
+
+		Wraps this schema so that a field using it is typed `write`.
+	]=]
+    function self:writeonly(): WriteonlySchema<T>
+        return newWriteonly(function(value)
+            return this:_validate(value)
+        end, false, nil, nil)
+    end
+
     -- Freezing turns the properties read-only in the type system, so the type
     -- is named again on the way out.
     return (table.freeze(this) :: any) :: DatatypeSchema<T>
@@ -1351,12 +2010,15 @@ local UDIM2 = (newDatatype("UDim2") :: any) :: UDim2Schema
 export type LiteralSchema<T> = {
     value: T,
     isOptional: boolean,
+    access: "readwrite",
     _validate: (self: LiteralSchema<T>, value: unknown) -> (T?, { Issue }?),
     safeParse: (self: LiteralSchema<T>, value: unknown) -> Result<T>,
     parse: (self: LiteralSchema<T>, value: unknown) -> T,
     optional: (self: LiteralSchema<T>) -> OptionalSchema<T>,
     default: (self: LiteralSchema<T>, fallback: T) -> DefaultSchema<T>,
     defaultWith: (self: LiteralSchema<T>, produce: () -> T) -> DefaultSchema<T>,
+    readonly: (self: LiteralSchema<T>) -> ReadonlySchema<T>,
+    writeonly: (self: LiteralSchema<T>) -> WriteonlySchema<T>,
 }
 
 -- Quoted so that "1" and 1 do not read the same in an error message.
@@ -1391,6 +2053,16 @@ local function newLiteral<T>(expected: T): LiteralSchema<T>
 		Always `false`.
 	]=]
     self.isOptional = false
+
+    --[=[
+		@within LiteralSchema
+		@prop access "readwrite"
+		@tag Reflection
+		@readonly
+
+		Always `"readwrite"`. Chain `:readonly()` or `:writeonly()` to change it.
+	]=]
+    self.access = "readwrite"
 
     local function validate(value: unknown): (T?, { Issue }?)
         if value ~= expected then
@@ -1489,6 +2161,36 @@ local function newLiteral<T>(expected: T): LiteralSchema<T>
         end, produce, false, nil, nil)
     end
 
+    --[=[
+		@within LiteralSchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<T>
+
+		Wraps this schema so that a field using it is typed `read`. Pairing it
+		with a singleton annotation gives an object a tag that cannot be
+		overwritten after parsing.
+	]=]
+    function self:readonly(): ReadonlySchema<T>
+        return newReadonly(function(value)
+            return this:_validate(value)
+        end, false, nil, nil)
+    end
+
+    --[=[
+		@within LiteralSchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<T>
+
+		Wraps this schema so that a field using it is typed `write`.
+	]=]
+    function self:writeonly(): WriteonlySchema<T>
+        return newWriteonly(function(value)
+            return this:_validate(value)
+        end, false, nil, nil)
+    end
+
     return this
 end
 
@@ -1511,6 +2213,7 @@ export type ArraySchema<T> = {
     minimum: number?,
     maximum: number?,
     isOptional: boolean,
+    access: "readwrite",
     _validate: (self: ArraySchema<T>, value: unknown) -> ({ T }?, { Issue }?),
     safeParse: (self: ArraySchema<T>, value: unknown) -> Result<{ T }>,
     parse: (self: ArraySchema<T>, value: unknown) -> { T },
@@ -1519,6 +2222,8 @@ export type ArraySchema<T> = {
     optional: (self: ArraySchema<T>) -> OptionalSchema<{ T }>,
     default: (self: ArraySchema<T>, fallback: { T }) -> DefaultSchema<{ T }>,
     defaultWith: (self: ArraySchema<T>, produce: () -> { T }) -> DefaultSchema<{ T }>,
+    readonly: (self: ArraySchema<T>) -> ReadonlySchema<{ T }>,
+    writeonly: (self: ArraySchema<T>) -> WriteonlySchema<{ T }>,
 }
 
 type LengthCheck = (length: number) -> string?
@@ -1563,6 +2268,16 @@ local function newArray<T>(
 		Always `false`.
 	]=]
     self.isOptional = false
+
+    --[=[
+		@within ArraySchema
+		@prop access "readwrite"
+		@tag Reflection
+		@readonly
+
+		Always `"readwrite"`. Chain `:readonly()` or `:writeonly()` to change it.
+	]=]
+    self.access = "readwrite"
 
     --[=[
 		@within ArraySchema
@@ -1768,6 +2483,35 @@ local function newArray<T>(
         end, produce, false, self.minimum, self.maximum)
     end
 
+    --[=[
+		@within ArraySchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<{ T }>
+
+		Wraps this schema so that a field using it is typed `read`. The array
+		itself stays mutable; it is the field that cannot be reassigned.
+	]=]
+    function self:readonly(): ReadonlySchema<{ T }>
+        return newReadonly(function(value)
+            return this:_validate(value)
+        end, false, self.minimum, self.maximum)
+    end
+
+    --[=[
+		@within ArraySchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<{ T }>
+
+		Wraps this schema so that a field using it is typed `write`.
+	]=]
+    function self:writeonly(): WriteonlySchema<{ T }>
+        return newWriteonly(function(value)
+            return this:_validate(value)
+        end, false, self.minimum, self.maximum)
+    end
+
     return this
 end
 
@@ -1802,12 +2546,15 @@ export type TupleSchema<T> = {
     minimum: number?,
     maximum: number?,
     isOptional: boolean,
+    access: "readwrite",
     _validate: (self: TupleSchema<T>, value: unknown) -> ({ T }?, { Issue }?),
     safeParse: (self: TupleSchema<T>, value: unknown) -> Result<{ T }>,
     parse: (self: TupleSchema<T>, value: unknown) -> { T },
     optional: (self: TupleSchema<T>) -> OptionalSchema<{ T }>,
     default: (self: TupleSchema<T>, fallback: { T }) -> DefaultSchema<{ T }>,
     defaultWith: (self: TupleSchema<T>, produce: () -> { T }) -> DefaultSchema<{ T }>,
+    readonly: (self: TupleSchema<T>) -> ReadonlySchema<{ T }>,
+    writeonly: (self: TupleSchema<T>) -> WriteonlySchema<{ T }>,
 }
 
 type Positions<T> = { AnySchema<T> }
@@ -1846,6 +2593,16 @@ local function newTuple<T>(positions: Positions<T>): TupleSchema<T>
 		Always `false`.
 	]=]
     self.isOptional = false
+
+    --[=[
+		@within TupleSchema
+		@prop access "readwrite"
+		@tag Reflection
+		@readonly
+
+		Always `"readwrite"`. Chain `:readonly()` or `:writeonly()` to change it.
+	]=]
+    self.access = "readwrite"
 
     --[=[
 		@within TupleSchema
@@ -2003,6 +2760,34 @@ local function newTuple<T>(positions: Positions<T>): TupleSchema<T>
         end, produce, false, self.minimum, self.maximum)
     end
 
+    --[=[
+		@within TupleSchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<{ T }>
+
+		Wraps this schema so that a field using it is typed `read`.
+	]=]
+    function self:readonly(): ReadonlySchema<{ T }>
+        return newReadonly(function(value)
+            return this:_validate(value)
+        end, false, self.minimum, self.maximum)
+    end
+
+    --[=[
+		@within TupleSchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<{ T }>
+
+		Wraps this schema so that a field using it is typed `write`.
+	]=]
+    function self:writeonly(): WriteonlySchema<{ T }>
+        return newWriteonly(function(value)
+            return this:_validate(value)
+        end, false, self.minimum, self.maximum)
+    end
+
     return this
 end
 
@@ -2030,6 +2815,7 @@ end
 export type ObjectSchema<T, S> = {
     shape: S,
     isOptional: boolean,
+    access: "readwrite",
     _validate: (self: ObjectSchema<T, S>, value: unknown) -> (T?, { Issue }?),
     safeParse: (self: ObjectSchema<T, S>, value: unknown) -> Result<T>,
     parse: (self: ObjectSchema<T, S>, value: unknown) -> T,
@@ -2037,6 +2823,8 @@ export type ObjectSchema<T, S> = {
     optional: (self: ObjectSchema<T, S>) -> OptionalSchema<T>,
     default: (self: ObjectSchema<T, S>, fallback: T) -> DefaultSchema<T>,
     defaultWith: (self: ObjectSchema<T, S>, produce: () -> T) -> DefaultSchema<T>,
+    readonly: (self: ObjectSchema<T, S>) -> ReadonlySchema<T>,
+    writeonly: (self: ObjectSchema<T, S>) -> WriteonlySchema<T>,
 }
 
 type Shape = { [string]: AnySchema<any> }
@@ -2078,6 +2866,17 @@ local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutpu
 		[ObjectSchema.shape] to reach a field's own limits.
 	]=]
     self.isOptional = false
+
+    --[=[
+		@within ObjectSchema
+		@prop access "readwrite"
+		@tag Reflection
+		@readonly
+
+		Always `"readwrite"`, and describes this schema as a field of some other
+		object rather than its own fields. Read `shape[field].access` for those.
+	]=]
+    self.access = "readwrite"
 
     --[=[
 		@within ObjectSchema
@@ -2248,6 +3047,36 @@ local function newObject<S>(shape: S, strict: boolean): ObjectSchema<objectOutpu
         end, produce, false, nil, nil)
     end
 
+    --[=[
+		@within ObjectSchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<objectOutput<S>>
+
+		Wraps this schema so that a field using it is typed `read`. Only the
+		field is affected; the nested record keeps whatever access its own
+		fields declare.
+	]=]
+    function self:readonly(): ReadonlySchema<objectOutput<S>>
+        return newReadonly(function(value)
+            return this:_validate(value)
+        end, false, nil, nil)
+    end
+
+    --[=[
+		@within ObjectSchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<objectOutput<S>>
+
+		Wraps this schema so that a field using it is typed `write`.
+	]=]
+    function self:writeonly(): WriteonlySchema<objectOutput<S>>
+        return newWriteonly(function(value)
+            return this:_validate(value)
+        end, false, nil, nil)
+    end
+
     return this
 end
 
@@ -2295,12 +3124,15 @@ end
 export type UnionSchema<T> = {
     options: { AnySchema<any> },
     isOptional: boolean,
+    access: "readwrite",
     _validate: (self: UnionSchema<T>, value: unknown) -> (T?, { Issue }?),
     safeParse: (self: UnionSchema<T>, value: unknown) -> Result<T>,
     parse: (self: UnionSchema<T>, value: unknown) -> T,
     optional: (self: UnionSchema<T>) -> OptionalSchema<T>,
     default: (self: UnionSchema<T>, fallback: T) -> DefaultSchema<T>,
     defaultWith: (self: UnionSchema<T>, produce: () -> T) -> DefaultSchema<T>,
+    readonly: (self: UnionSchema<T>) -> ReadonlySchema<T>,
+    writeonly: (self: UnionSchema<T>) -> WriteonlySchema<T>,
 }
 
 local function newUnion<T>(options: { AnySchema<any> }): UnionSchema<T>
@@ -2353,6 +3185,17 @@ local function newUnion<T>(options: { AnySchema<any> }): UnionSchema<T>
     end
 
     self.isOptional = optional
+
+    --[=[
+		@within UnionSchema
+		@prop access "readwrite"
+		@tag Reflection
+		@readonly
+
+		Always `"readwrite"`, whatever the options carry. An option's marker
+		says how that option would sit in an object, not how the union does.
+	]=]
+    self.access = "readwrite"
 
     --[=[
 		@within UnionSchema
@@ -2479,6 +3322,34 @@ local function newUnion<T>(options: { AnySchema<any> }): UnionSchema<T>
         return newDefault(function(value)
             return this:_validate(value)
         end, produce, false, nil, nil)
+    end
+
+    --[=[
+		@within UnionSchema
+		@method readonly
+		@tag Wrapper
+		@return ReadonlySchema<T>
+
+		Wraps this schema so that a field using it is typed `read`.
+	]=]
+    function self:readonly(): ReadonlySchema<T>
+        return newReadonly(function(value)
+            return this:_validate(value)
+        end, false, nil, nil)
+    end
+
+    --[=[
+		@within UnionSchema
+		@method writeonly
+		@tag Wrapper
+		@return WriteonlySchema<T>
+
+		Wraps this schema so that a field using it is typed `write`.
+	]=]
+    function self:writeonly(): WriteonlySchema<T>
+        return newWriteonly(function(value)
+            return this:_validate(value)
+        end, false, nil, nil)
     end
 
     return this
@@ -2836,6 +3707,70 @@ function Vet.union<S>(options: { S }): UnionSchema<infer<S>>
     -- newUnion cannot bind its output type from an erased option list, so the
     -- result is named here instead.
     return (newUnion(options :: any) :: any) :: UnionSchema<infer<S>>
+end
+
+--[=[
+	@within Vet
+	@tag Constructor
+	@param schema S -- Schema the field is validated against
+	@return ReadonlySchema<Vet.infer<S>>
+
+	Marks a schema read-only, so a field using it is declared `read` in the
+	record [Vet.object] parses to.
+
+	```lua
+	local PlayerData = v.object({
+		id = v.readonly(v.number():integer()),
+		name = v.string(),
+	})
+
+	type PlayerData = v.infer<typeof(PlayerData)>
+	--> { read id: number, name: string }
+	```
+
+	Every schema also has a `:readonly()` method, which reads better at the end
+	of a chain: `v.number():integer():readonly()`. Use this form when the schema
+	arrives from somewhere else and there is no chain to put it on.
+]=]
+function Vet.readonly<S>(schema: S): ReadonlySchema<infer<S>>
+    local inner = schema :: AnySchema<infer<S>>
+    local reflection = schema :: any
+
+    return newReadonly(function(value)
+        return inner:_validate(value)
+    end, reflection.isOptional == true, reflection.minimum, reflection.maximum)
+end
+
+--[=[
+	@within Vet
+	@tag Constructor
+	@param schema S -- Schema the field is validated against
+	@return WriteonlySchema<Vet.infer<S>>
+
+	Marks a schema write-only, so a field using it is declared `write` in the
+	record [Vet.object] parses to.
+
+	```lua
+	local PlayerData = v.object({
+		name = v.string(),
+		secretToken = v.writeonly(v.string():length(32)),
+	})
+
+	type PlayerData = v.infer<typeof(PlayerData)>
+	--> { name: string, write secretToken: string }
+	```
+
+	The token is still validated on the way in and still present at runtime —
+	what changes is that reading it back is an analysis error, so it cannot be
+	logged or replicated by accident.
+]=]
+function Vet.writeonly<S>(schema: S): WriteonlySchema<infer<S>>
+    local inner = schema :: AnySchema<infer<S>>
+    local reflection = schema :: any
+
+    return newWriteonly(function(value)
+        return inner:_validate(value)
+    end, reflection.isOptional == true, reflection.minimum, reflection.maximum)
 end
 
 return Vet

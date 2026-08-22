@@ -90,3 +90,35 @@ It works on every schema, including nested objects and arrays.
 `v.infer` is a user-defined type function, so it runs during analysis and
 costs nothing at runtime. It needs a Luau version that supports user-defined
 type functions — in editors that means enabling the new type solver.
+
+## Read-only and write-only fields
+
+Chaining `:readonly()` or `:writeonly()` puts a Luau property access modifier on
+the field the schema describes, so the inferred type also says who may touch it:
+
+```lua
+local PlayerData = v.object({
+	id = v.number():integer():readonly(),
+	name = v.string(),
+	secretToken = v.string():length(32):writeonly(),
+})
+
+type PlayerData = v.infer<typeof(PlayerData)>
+--> { read id: number, name: string, write secretToken: string }
+```
+
+Both come last in a chain, after the refinements and after `:optional()` or
+`:default()`. Neither changes what is accepted — `secretToken` is still required
+and still has to be 32 characters, and every value is still there at runtime.
+What changes is the type, so reassigning an id or reading a token back out is a
+mistake the analyser catches.
+
+Use `v.readonly(schema)` and `v.writeonly(schema)` for a schema that arrived
+from somewhere else and has no chain to sit on. Either form leaves the marker
+readable as `access`, next to `minimum`, `maximum` and `isOptional`:
+
+```lua
+PlayerData.shape.id.access          --> "read"
+PlayerData.shape.name.access        --> "readwrite"
+PlayerData.shape.secretToken.access --> "write"
+```
